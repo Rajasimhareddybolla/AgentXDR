@@ -145,3 +145,28 @@
 - ASI02: Taint-flow PEP
 - ASI04: MCP schema-hash pinning, shadow tool detection
 - ASI05: Tool tier enforcement, parameter constraints
+
+---
+
+## Milestone 4 — M4: LLM Gateway Proxy (Phase 2)
+
+**Completed:** 2026-11-22T18:31:34Z  
+**Commit:** `c7abc23` → pushed to `origin/main`
+
+### Deliverables
+
+| Module | Description |
+|--------|-------------|
+| `src/agentxdr/proxy/models.py` | `GatewayConfig`, `SecurityRefusal`, `InspectionResult`, `SessionContext` models |
+| `src/agentxdr/proxy/session_manager.py` | Thread-safe in-memory session manager tracking turns, tool calls, and taint labels per trace |
+| `src/agentxdr/proxy/request_inspector.py` | Inbound message inspector: prompt injection detection (ASI01) & DLP PII/secret masking |
+| `src/agentxdr/proxy/response_inspector.py` | Outbound response inspector: system prompt leak detection (ASI06) & DLP masking for full responses and SSE chunks |
+| `src/agentxdr/proxy/security_refusal.py` | Standardized JSON security refusal envelope builder |
+| `src/agentxdr/proxy/gateway.py` | Programmatic `LlmGateway` and `create_fastapi_app()` wrapping `/v1/chat/completions`, `/health`, and `/metrics` |
+| `tests/unit/test_gateway.py` | 24 unit tests covering session manager, inspectors, refusal models, and gateway core |
+| `tests/e2e/test_tier1_proxy.py` | 6 E2E tests for health, metrics, clean completions, prompt injection blocking, turn budget trip, and DLP masking |
+| `tests/e2e/test_tier2_proxy.py` | 6 boundary tests: empty message lists, invalid JSON (400), trace ID fallback, <50ms P95 latency on 60KB payloads, 10 concurrent sessions, SSE chunk inspection |
+
+### Test Results
+
+- **565 passed / 0 failed / 17 skipped** across all tiers
