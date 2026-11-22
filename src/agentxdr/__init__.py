@@ -1,5 +1,12 @@
 """AgentXDR: Enterprise Security Control Plane and Inline Runtime Protection for Agentic AI."""
 
+from agentxdr.guardrails import (
+    AstSanitizer,
+    AstSanitizerResult,
+    AstViolation,
+    DlpMasker,
+    DlpResult,
+)
 from agentxdr.models import (
     AgentEvent,
     BudgetsConfig,
@@ -37,4 +44,9 @@ __all__ = [
     "KillSwitchState",
     "KillSwitchScope",
     "KillSwitchRecord",
+    "DlpMasker",
+    "DlpResult",
+    "AstSanitizer",
+    "AstSanitizerResult",
+    "AstViolation",
 ]
