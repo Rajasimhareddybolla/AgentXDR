@@ -1,5 +1,9 @@
 """AgentXDR: Enterprise Security Control Plane and Inline Runtime Protection for Agentic AI."""
 
+from agentxdr.breakers import (
+    CircuitBreaker,
+    CircuitBreakerVerdict,
+)
 from agentxdr.guardrails import (
     AstSanitizer,
     AstSanitizerResult,
@@ -23,6 +27,10 @@ from agentxdr.models import (
     ToolPolicy,
     ToolTier,
     Verdict,
+)
+from agentxdr.policy import (
+    PolicyEvaluator,
+    load_policy_yaml,
 )
 
 __version__ = "0.1.0"
@@ -49,4 +57,8 @@ __all__ = [
     "AstSanitizer",
     "AstSanitizerResult",
     "AstViolation",
+    "PolicyEvaluator",
+    "load_policy_yaml",
+    "CircuitBreaker",
+    "CircuitBreakerVerdict",
 ]

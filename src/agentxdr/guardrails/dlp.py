@@ -120,103 +120,135 @@ class DlpMasker:
                 current_text = pat.sub(f"[REDACTED_{token_name}]", current_text)
 
         # 2. Private Keys (Secrets)
-        matches = list(self.RE_PRIVATE_KEY.finditer(current_text))
-        if matches:
-            has_secrets = True
-            redaction_count += len(matches)
-            current_text = self.RE_PRIVATE_KEY.sub("[REDACTED_PRIVATE_KEY]", current_text)
-
-        # 3. Password Hashes (Secrets)
-        matches = list(self.RE_HASH.finditer(current_text))
-        if matches:
-            has_secrets = True
-            redaction_count += len(matches)
-            current_text = self.RE_HASH.sub("[REDACTED_PASSWORD_HASH]", current_text)
-
-        # 4. Bearer Tokens (Secrets)
-        def _sub_bearer(m: re.Match[str]) -> str:
-            nonlocal has_secrets, redaction_count
-            has_secrets = True
-            redaction_count += 1
-            return "Bearer [REDACTED_BEARER_TOKEN]"
-
-        current_text = self.RE_BEARER.sub(_sub_bearer, current_text)
-
-        # 5. URL Embedded Authority Credentials (Secrets)
-        def _sub_url_cred(m: re.Match[str]) -> str:
-            nonlocal has_secrets, redaction_count
-            has_secrets = True
-            redaction_count += 1
-            proto = m.group("proto")
-            rest = m.group("rest")
-            return f"{proto}[REDACTED_PASSWORD]{rest}"
-
-        current_text = self.RE_URL_CREDENTIAL.sub(_sub_url_cred, current_text)
-
-        # 6. JWT Tokens (Secrets)
-        matches = list(self.RE_JWT.finditer(current_text))
-        if matches:
-            has_secrets = True
-            redaction_count += len(matches)
-            current_text = self.RE_JWT.sub("[REDACTED_JWT]", current_text)
-
-        # 7. Specific API Keys (Secrets)
-        for pat in (self.RE_OPENAI_KEY, self.RE_AWS_KEY, self.RE_GITHUB_TOKEN, self.RE_SLACK_TOKEN):
-            matches = list(pat.finditer(current_text))
+        if "PRIVATE KEY" in current_text:
+            matches = list(self.RE_PRIVATE_KEY.finditer(current_text))
             if matches:
                 has_secrets = True
                 redaction_count += len(matches)
-                current_text = pat.sub("[REDACTED_API_KEY]", current_text)
+                current_text = self.RE_PRIVATE_KEY.sub("[REDACTED_PRIVATE_KEY]", current_text)
+
+        # 3. Password Hashes (Secrets)
+        if "$" in current_text:
+            matches = list(self.RE_HASH.finditer(current_text))
+            if matches:
+                has_secrets = True
+                redaction_count += len(matches)
+                current_text = self.RE_HASH.sub("[REDACTED_PASSWORD_HASH]", current_text)
+
+        # 4. Bearer Tokens (Secrets)
+        if "bearer" in current_text.lower():
+            def _sub_bearer(m: re.Match[str]) -> str:
+                nonlocal has_secrets, redaction_count
+                has_secrets = True
+                redaction_count += 1
+                return "Bearer [REDACTED_BEARER_TOKEN]"
+
+            current_text = self.RE_BEARER.sub(_sub_bearer, current_text)
+
+        # 5. URL Embedded Authority Credentials (Secrets)
+        if "://" in current_text and "@" in current_text:
+            def _sub_url_cred(m: re.Match[str]) -> str:
+                nonlocal has_secrets, redaction_count
+                has_secrets = True
+                redaction_count += 1
+                proto = m.group("proto")
+                rest = m.group("rest")
+                return f"{proto}[REDACTED_PASSWORD]{rest}"
+
+            current_text = self.RE_URL_CREDENTIAL.sub(_sub_url_cred, current_text)
+
+        # 6. JWT Tokens (Secrets)
+        if "ey" in current_text:
+            matches = list(self.RE_JWT.finditer(current_text))
+            if matches:
+                has_secrets = True
+                redaction_count += len(matches)
+                current_text = self.RE_JWT.sub("[REDACTED_JWT]", current_text)
+
+        # 7. Specific API Keys (Secrets)
+        if "sk-" in current_text:
+            matches = list(self.RE_OPENAI_KEY.finditer(current_text))
+            if matches:
+                has_secrets = True
+                redaction_count += len(matches)
+                current_text = self.RE_OPENAI_KEY.sub("[REDACTED_API_KEY]", current_text)
+
+        if "AKIA" in current_text or "ASIA" in current_text:
+            matches = list(self.RE_AWS_KEY.finditer(current_text))
+            if matches:
+                has_secrets = True
+                redaction_count += len(matches)
+                current_text = self.RE_AWS_KEY.sub("[REDACTED_API_KEY]", current_text)
+
+        if "gh" in current_text:
+            matches = list(self.RE_GITHUB_TOKEN.finditer(current_text))
+            if matches:
+                has_secrets = True
+                redaction_count += len(matches)
+                current_text = self.RE_GITHUB_TOKEN.sub("[REDACTED_API_KEY]", current_text)
+
+        if "xox" in current_text:
+            matches = list(self.RE_SLACK_TOKEN.finditer(current_text))
+            if matches:
+                has_secrets = True
+                redaction_count += len(matches)
+                current_text = self.RE_SLACK_TOKEN.sub("[REDACTED_API_KEY]", current_text)
 
         # 8. AWS Secret Access Key
-        def _sub_aws_secret(m: re.Match[str]) -> str:
-            nonlocal has_secrets, redaction_count
-            has_secrets = True
-            redaction_count += 1
-            return f"{m.group('prefix')}[REDACTED_API_KEY]"
+        if "aws" in current_text.lower():
+            def _sub_aws_secret(m: re.Match[str]) -> str:
+                nonlocal has_secrets, redaction_count
+                has_secrets = True
+                redaction_count += 1
+                return f"{m.group('prefix')}[REDACTED_API_KEY]"
 
-        current_text = self.RE_AWS_SECRET_KEY.sub(_sub_aws_secret, current_text)
+            current_text = self.RE_AWS_SECRET_KEY.sub(_sub_aws_secret, current_text)
 
         # 9. Key-Value Passwords & Generic API Keys (Secrets)
-        def _sub_kv_secret(m: re.Match[str]) -> str:
-            nonlocal has_secrets, redaction_count
-            has_secrets = True
-            redaction_count += 1
-            prefix = m.group("prefix")
-            suffix = m.group("suffix")
-            token = "[REDACTED_PASSWORD]" if any(k in prefix.lower() for k in ("pass", "secret", "pwd")) else "[REDACTED_API_KEY]"
-            return f"{prefix}{token}{suffix}"
+        lower_txt = current_text.lower()
+        if any(k in lower_txt for k in ("pass", "secret", "token", "key", "pwd", "auth", "credential", "bearer")):
+            def _sub_kv_secret(m: re.Match[str]) -> str:
+                nonlocal has_secrets, redaction_count
+                has_secrets = True
+                redaction_count += 1
+                prefix = m.group("prefix")
+                suffix = m.group("suffix")
+                token = "[REDACTED_PASSWORD]" if any(k in prefix.lower() for k in ("pass", "secret", "pwd")) else "[REDACTED_API_KEY]"
+                return f"{prefix}{token}{suffix}"
 
-        current_text = self.RE_PASSWORD_KV.sub(_sub_kv_secret, current_text)
-        current_text = self.RE_GENERIC_KEY.sub(_sub_kv_secret, current_text)
+            current_text = self.RE_PASSWORD_KV.sub(_sub_kv_secret, current_text)
+            current_text = self.RE_GENERIC_KEY.sub(_sub_kv_secret, current_text)
 
-        # 10. PII: Credit Cards (before phone numbers to avoid partial 12-digit prefix matches)
-        matches = list(self.RE_CREDIT_CARD.finditer(current_text))
-        if matches:
-            has_pii = True
-            redaction_count += len(matches)
-            current_text = self.RE_CREDIT_CARD.sub("[REDACTED_CREDIT_CARD]", current_text)
+        # 10. PII: Credit Cards & SSNs & Phone Numbers (only if digits exist)
+        if any(c.isdigit() for c in current_text):
+            # Credit Cards
+            matches = list(self.RE_CREDIT_CARD.finditer(current_text))
+            if matches:
+                has_pii = True
+                redaction_count += len(matches)
+                current_text = self.RE_CREDIT_CARD.sub("[REDACTED_CREDIT_CARD]", current_text)
 
-        # 11. PII: SSNs
-        matches = list(self.RE_SSN.finditer(current_text))
-        if matches:
-            has_pii = True
-            redaction_count += len(matches)
-            current_text = self.RE_SSN.sub("[REDACTED_SSN]", current_text)
+            # SSNs
+            matches = list(self.RE_SSN.finditer(current_text))
+            if matches:
+                has_pii = True
+                redaction_count += len(matches)
+                current_text = self.RE_SSN.sub("[REDACTED_SSN]", current_text)
 
-        # 12. PII: Phone Numbers
-        matches = list(self.RE_PHONE.finditer(current_text))
-        if matches:
-            has_pii = True
-            redaction_count += len(matches)
-            current_text = self.RE_PHONE.sub("[REDACTED_PHONE]", current_text)
+            # Phone Numbers
+            matches = list(self.RE_PHONE.finditer(current_text))
+            if matches:
+                has_pii = True
+                redaction_count += len(matches)
+                current_text = self.RE_PHONE.sub("[REDACTED_PHONE]", current_text)
 
         # 13. PII: Emails
-        matches = list(self.RE_EMAIL.finditer(current_text))
-        if matches:
-            has_pii = True
-            redaction_count += len(matches)
-            current_text = self.RE_EMAIL.sub("[REDACTED_EMAIL]", current_text)
+        if "@" in current_text:
+            matches = list(self.RE_EMAIL.finditer(current_text))
+            if matches:
+                has_pii = True
+                redaction_count += len(matches)
+                current_text = self.RE_EMAIL.sub("[REDACTED_EMAIL]", current_text)
 
         # 14. Prompt Leakage Guardrail
         if system_prompt and system_prompt.strip():
