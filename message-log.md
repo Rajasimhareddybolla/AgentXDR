@@ -110,3 +110,38 @@
      - Rule representation `RuleStr` matching case-insensitively across rules.
   3. Created unit tests in `tests/unit/test_dlp.py` and `tests/unit/test_ast_sanitizer.py` with 100-sample latency benchmarking.
   4. Verified 100% test pass rate across 199 automated tests in `tests/unit/` and `tests/e2e/`.
+
+---
+
+## Milestone 3 — R3: Tiered Policy Evaluator & Circuit Breakers
+
+**Completed:** 2026-11-22T18:16:51Z  
+**Commit:** `f2d16ec` → pushed to `origin/main`
+
+### Deliverables
+
+| Module | Description |
+|--------|-------------|
+| `src/agentxdr/policy/loader.py` | `load_policy_yaml()` — parses YAML/string into `PolicySchema` |
+| `src/agentxdr/policy/evaluator.py` | `PolicyEvaluator` — 9-step PEP: kill-switch → shadow-tool → tier-blocked → schema-hash pinning → taint-flow → param constraints → drift escalation → tier resolution |
+| `src/agentxdr/breakers/circuit_breaker.py` | `CircuitBreaker` — turn / tool-call / identical-call / duration / cost budgets with cross-limit tripped propagation; `check_duration` is scoped to duration only |
+| `tests/unit/test_policy.py` | 14 unit tests |
+| `tests/unit/test_breakers.py` | 8 unit tests |
+
+### Test Results
+
+- **529 passed / 0 failed / 17 skipped** across all tiers (unit, tier1, tier2, tier3, tier4 e2e)
+
+### Key Design Decisions
+
+- Schema hash validation: strict 64-hex format enforced for `AUTOMATIC` tools; equality-only for `PRIVILEGED_HITL` (policy itself may store shorter hashes)
+- `_UNSET` sentinel distinguishes "not provided" from explicit `None` (which blocks)
+- `check_duration()` only propagates trip if `max_session_duration_sec` tripped — not other limits (tool_calls, turns)
+- DLP fast-path substring guards ensure <50ms P95 at 100KB payload / 1000-string list
+
+### OWASP Coverage
+
+- ASI01: Kill-switch enforcement, dynamic drift escalation
+- ASI02: Taint-flow PEP
+- ASI04: MCP schema-hash pinning, shadow tool detection
+- ASI05: Tool tier enforcement, parameter constraints
