@@ -50,6 +50,18 @@ from agentxdr.proxy import (
     SessionManager,
     build_refusal,
 )
+from agentxdr.sdk import (
+    AgentBus,
+    AgentXDRConfigError,
+    AgentXDRContext,
+    InterAgentEnvelope,
+    MemoryGuard,
+    MemoryWriteResult,
+    RagGuard,
+    RagRetrievalResult,
+    SdkTelemetry,
+    guard_openai,
+)
 
 __version__ = "0.1.0"
 
@@ -93,4 +105,14 @@ __all__ = [
     "McpCallEnforcer",
     "McpProxy",
     "create_fastapi_mcp_app",
+    "AgentXDRContext",
+    "guard_openai",
+    "AgentXDRConfigError",
+    "RagGuard",
+    "RagRetrievalResult",
+    "MemoryGuard",
+    "MemoryWriteResult",
+    "AgentBus",
+    "InterAgentEnvelope",
+    "SdkTelemetry",
 ]
