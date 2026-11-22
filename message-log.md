@@ -194,3 +194,32 @@
 ### Test Results
 
 - **602 passed / 0 failed / 17 skipped** across all tiers
+
+---
+
+## Milestone 6 — M6: Python In-Process SDK & Pairwise Integration (Phase 2)
+
+**Completed:** 2026-11-22T18:40:24Z  
+**Commit:** `cc8679c` → pushed to `origin/main`
+
+### Deliverables
+
+| Module | Description |
+|--------|-------------|
+| `src/agentxdr/sdk/context.py` | `AgentXDRContext`: thread-safe context carrier, trace propagation, header generation (`to_headers()`) |
+| `src/agentxdr/sdk/openai_guard.py` | `guard_openai()`: drop-in monkey-patching for OpenAI clients (base_url + tracing headers) |
+| `src/agentxdr/sdk/rag.py` | `RagGuard`: pre-retrieval RBAC ACL filter injection & indirect prompt injection detection |
+| `src/agentxdr/sdk/memory.py` | `MemoryGuard`: write-ahead log (WAL) snapshot commits and taint-gated write blocking (ASI08) |
+| `src/agentxdr/sdk/agent_bus.py` | `AgentBus` & `InterAgentEnvelope`: HMAC-SHA256 signing, replay prevention nonce, monotonic role attenuation |
+| `src/agentxdr/sdk/telemetry.py` | `SdkTelemetry`: OpenTelemetry `gen_ai.*` compliant span instrumentation |
+| `tests/unit/test_sdk.py` | 13 unit tests covering context, guard_openai, rag, memory, bus, and telemetry |
+| `tests/e2e/test_tier1_sdk.py` | 8 E2E feature tests (Features 36–43) covering OpenAI patch, RAG RBAC, injection taint, WAL snapshot chain, envelope verification, and role attenuation |
+| `tests/e2e/test_tier2_sdk.py` | 5 boundary tests: empty roles, large payloads (>20KB), concurrent taint writes, idempotent client patching, WAL high-volume scaling |
+| `tests/e2e/test_tier3_proxy_mcp.py` | Integrated test linking Gateway, MCP Proxy, and SDK: user prompt -> gateway -> MCP tool call -> return sanitization -> taint propagation -> memory write blocking |
+
+### Phase 2 Summary & Test Results
+
+- **Milestone 4 (M4) — LLM Gateway Proxy:** 36 tests (`c7abc23`)
+- **Milestone 5 (M5) — MCP Security Proxy:** 37 tests (`7a48096`)
+- **Milestone 6 (M6) — In-Process Python SDK:** 27 tests (`cc8679c`)
+- **Full Project Test Suite:** **629 passed / 0 failed / 17 skipped** across all tiers
