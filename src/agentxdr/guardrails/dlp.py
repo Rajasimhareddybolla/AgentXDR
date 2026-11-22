@@ -47,7 +47,7 @@ class DlpMasker:
         r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)",
     )
     RE_JWT: Pattern[str] = re.compile(
-        r"\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b",
+        r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{1,}\.[A-Za-z0-9_-]{1,}\b",
     )
     RE_BEARER: Pattern[str] = re.compile(
         r"(?i)\bBearer\s+([A-Za-z0-9_\-\.+=/]{12,})",
@@ -67,7 +67,7 @@ class DlpMasker:
         r"\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b",
     )
     RE_AWS_KEY: Pattern[str] = re.compile(
-        r"\bAKIA[0-9A-Z]{16}\b",
+        r"\bAKIA[0-9A-Z]{16,20}\b",
     )
     RE_AWS_SECRET_KEY: Pattern[str] = re.compile(
         r"""(?i)(?P<prefix>(?:AWS_SECRET_ACCESS_KEY|SECRET_ACCESS_KEY)\s*=\s*)(?P<val>[A-Za-z0-9/+=]{35,45})\b""",

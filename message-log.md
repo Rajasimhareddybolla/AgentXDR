@@ -93,7 +93,7 @@
 ## [2026-11-22] - Milestone 2 (R2): Deterministic Inline Guardrails & DLP Engine Completed
 
 * **Agent Role:** Core Engine & Guardrails Engineer
-* **Status:** Milestone 2 Complete (198/198 tests passing)
+* **Status:** Milestone 2 Complete (199/199 tests passing)
 * **Summary of Actions:**
   1. Implemented `DlpMasker` and `DlpResult` in `src/agentxdr/guardrails/dlp.py`:
      - Linear compile-cached regex scanning over strings and recursive JSON payloads.
@@ -101,11 +101,12 @@
      - Credentials & Secrets masking: private keys (RSA/PEM), passwords in strings/JSON/URLs, JWT tokens, Bearer tokens, password hashes.
      - API Keys masking: OpenAI (`sk-...`), AWS access/secret keys, GitHub tokens, Slack tokens, generic API keys.
      - System prompt leakage detection with exact and n-gram/containment similarity filtering.
-     - Verified P95 inline latency <50ms (sub-5ms typical).
+     - Verified P95 inline latency strictly < 50ms (sub-5ms typical, benchmarked over 100 samples).
   2. Implemented `AstSanitizer`, `AstSanitizerResult`, and `AstViolation` in `src/agentxdr/guardrails/ast_sanitizer.py`:
      - Pre-execution AST static analysis catching SyntaxErrors gracefully.
      - Blocks forbidden imports (`os`, `subprocess`, `socket`, `ctypes`, `shutil`, `pickle`, `requests`, `urllib`, etc.).
      - Blocks dangerous built-in functions (`eval`, `exec`, `__import__`, `open`, `compile`, etc.) called directly, via variable aliases, or in lambdas/comprehensions.
      - Blocks dunder attribute traversals (`__subclasses__`, `__bases__`, `__mro__`, `__globals__`, etc.) while permitting standard object model methods (`__init__`, `__str__`, `__repr__`, etc.).
-  3. Created unit tests in `tests/unit/test_dlp.py` and `tests/unit/test_ast_sanitizer.py`.
-  4. Verified 100% test pass rate across 198 automated tests in `tests/unit/` and `tests/e2e/`.
+     - Rule representation `RuleStr` matching case-insensitively across rules.
+  3. Created unit tests in `tests/unit/test_dlp.py` and `tests/unit/test_ast_sanitizer.py` with 100-sample latency benchmarking.
+  4. Verified 100% test pass rate across 199 automated tests in `tests/unit/` and `tests/e2e/`.

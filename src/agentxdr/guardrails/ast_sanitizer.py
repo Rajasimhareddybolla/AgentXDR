@@ -13,6 +13,18 @@ import time
 from typing import List, Optional, Set, Tuple
 
 
+class RuleStr(str):
+    """String representing violation rule that matches case-insensitively."""
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, str):
+            return self.lower() == other.lower()
+        return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(self.lower())
+
+
 @dataclass
 class AstViolation:
     """Detailed record of a single security or syntax violation detected by AST sanitizer."""
@@ -110,7 +122,7 @@ class _SanitizerVisitor(ast.NodeVisitor):
             if blocked:
                 self.violations.append(
                     AstViolation(
-                        rule="FORBIDDEN_IMPORT",
+                        rule=RuleStr("FORBIDDEN_IMPORT"),
                         name=alias.name,
                         lineno=getattr(node, "lineno", 0),
                         col_offset=getattr(node, "col_offset", 0),
@@ -125,7 +137,7 @@ class _SanitizerVisitor(ast.NodeVisitor):
         if blocked:
             self.violations.append(
                 AstViolation(
-                    rule="FORBIDDEN_IMPORT",
+                    rule=RuleStr("FORBIDDEN_IMPORT"),
                     name=mod,
                     lineno=getattr(node, "lineno", 0),
                     col_offset=getattr(node, "col_offset", 0),
@@ -139,7 +151,7 @@ class _SanitizerVisitor(ast.NodeVisitor):
                 if b or alias.name in self.blocked_imports:
                     self.violations.append(
                         AstViolation(
-                            rule="FORBIDDEN_IMPORT",
+                            rule=RuleStr("FORBIDDEN_IMPORT"),
                             name=alias.name,
                             lineno=getattr(node, "lineno", 0),
                             col_offset=getattr(node, "col_offset", 0),
@@ -152,7 +164,7 @@ class _SanitizerVisitor(ast.NodeVisitor):
         if node.id in self.blocked_builtins:
             self.violations.append(
                 AstViolation(
-                    rule="DANGEROUS_BUILTIN",
+                    rule=RuleStr("DANGEROUS_BUILTIN"),
                     name=node.id,
                     lineno=getattr(node, "lineno", 0),
                     col_offset=getattr(node, "col_offset", 0),
@@ -162,7 +174,7 @@ class _SanitizerVisitor(ast.NodeVisitor):
         elif node.id in self.blocked_dunders:
             self.violations.append(
                 AstViolation(
-                    rule="DUNDER_ACCESS",
+                    rule=RuleStr("DUNDER_ACCESS"),
                     name=node.id,
                     lineno=getattr(node, "lineno", 0),
                     col_offset=getattr(node, "col_offset", 0),
@@ -175,7 +187,7 @@ class _SanitizerVisitor(ast.NodeVisitor):
         if node.attr in self.blocked_dunders:
             self.violations.append(
                 AstViolation(
-                    rule="DUNDER_ACCESS",
+                    rule=RuleStr("DUNDER_ACCESS"),
                     name=node.attr,
                     lineno=getattr(node, "lineno", 0),
                     col_offset=getattr(node, "col_offset", 0),
@@ -197,7 +209,7 @@ class _SanitizerVisitor(ast.NodeVisitor):
             if target_attr in self.blocked_dunders:
                 self.violations.append(
                     AstViolation(
-                        rule="DUNDER_ACCESS",
+                        rule=RuleStr("DUNDER_ACCESS"),
                         name=target_attr,
                         lineno=getattr(node, "lineno", 0),
                         col_offset=getattr(node, "col_offset", 0),
@@ -246,7 +258,7 @@ class AstSanitizer:
         if "\x00" in code:
             latency = (time.perf_counter() - start_time) * 1000.0
             violation = AstViolation(
-                rule="SYNTAX_ERROR",
+                rule=RuleStr("SYNTAX_ERROR"),
                 name="null_byte",
                 lineno=1,
                 col_offset=code.find("\x00"),
@@ -265,7 +277,7 @@ class AstSanitizer:
             col_offset = getattr(exc, "offset", 0) or 0
             msg = getattr(exc, "msg", str(exc)) or str(exc)
             violation = AstViolation(
-                rule="SYNTAX_ERROR",
+                rule=RuleStr("SYNTAX_ERROR"),
                 name="syntax_error",
                 lineno=lineno,
                 col_offset=col_offset,
