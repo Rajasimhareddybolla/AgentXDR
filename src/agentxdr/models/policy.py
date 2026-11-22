@@ -39,7 +39,7 @@ class ToolPolicy(BaseModel):
     def validate_name(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("Tool name must be a non-empty string")
-        return v
+        return v.strip()
 
 
 class BudgetsConfig(BaseModel):

@@ -20,7 +20,7 @@ class TaintState:
             raise ValueError("trace_id must be a non-empty string")
         self._trace_id: str = trace_id.strip()
         self._taints: Set[str] = set()
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
 
         if initial_taints:
             self.add_taints(initial_taints)
@@ -81,5 +81,10 @@ class TaintState:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, TaintState):
             return False
-        with self._lock, other._lock:
-            return self._trace_id == other._trace_id and self._taints == other._taints
+        if self is other:
+            return True
+        with self._lock:
+            s_trace, s_taints = self._trace_id, set(self._taints)
+        with other._lock:
+            o_trace, o_taints = other._trace_id, set(other._taints)
+        return s_trace == o_trace and s_taints == o_taints

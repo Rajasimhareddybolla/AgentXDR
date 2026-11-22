@@ -55,15 +55,20 @@ class KillSwitchState:
     def activate(
         self,
         scope: KillSwitchScope,
-        target_id: str,
+        target_id: Optional[str],
         reason: str,
         triggered_by: str,
         ttl_seconds: Optional[int] = None,
     ) -> KillSwitchRecord:
         """Activate a kill switch at the specified scope and target."""
-        cleaned_target = (target_id.strip() if target_id else "*") if scope == KillSwitchScope.GLOBAL else target_id.strip()
-        if not cleaned_target:
-            raise ValueError("target_id must be a non-empty string")
+        if target_id is None or not str(target_id).strip():
+            if scope == KillSwitchScope.GLOBAL:
+                cleaned_target = "*"
+            else:
+                raise ValueError("target_id must be a non-empty string")
+        else:
+            cleaned_target = str(target_id).strip()
+
         if not reason or not reason.strip():
             raise ValueError("reason must be a non-empty string")
         if not triggered_by or not triggered_by.strip():
@@ -80,9 +85,15 @@ class KillSwitchState:
             self._records[(scope, cleaned_target)] = record
         return record
 
-    def deactivate(self, scope: KillSwitchScope, target_id: str) -> bool:
+    def deactivate(self, scope: KillSwitchScope, target_id: Optional[str] = None) -> bool:
         """Deactivate a kill switch at the specified scope and target."""
-        cleaned_target = (target_id.strip() if target_id else "*") if scope == KillSwitchScope.GLOBAL else target_id.strip()
+        if target_id is None or not str(target_id).strip():
+            if scope == KillSwitchScope.GLOBAL:
+                cleaned_target = "*"
+            else:
+                return False
+        else:
+            cleaned_target = str(target_id).strip()
         key = (scope, cleaned_target)
         with self._lock:
             if key in self._records:

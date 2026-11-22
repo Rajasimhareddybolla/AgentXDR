@@ -60,3 +60,32 @@
   - Milestone 1 is verified and fully functional.
   - Package `agentxdr-core` installed and accessible.
   - Next milestone (M2) can immediately build on `src/agentxdr/models/` to implement the inline DLP masking engine and Python AST static code sanitizer.
+
+## [2026-11-22] - Phase 1 Milestone 1 (Iteration 2 Remediation): Concurrency & Input Hardening
+
+* **Agent Role:** Worker (Implementer, QA, Specialist)
+* **Status:** Milestone Complete (Remediated)
+* **Task Reference:** Milestone 1 Iteration 2 Remediation
+* **Teamwork Run ID:** `8581f2df-ad60-4c10-a8eb-3e6b8f17425f`
+* **Summary of Actions:**
+  1. Resolved critical deadlock in `TaintState.__eq__` (`src/agentxdr/models/taint.py`):
+     - Upgraded `self._lock` from `threading.Lock()` to reentrant `threading.RLock()`.
+     - Refactored `__eq__` with reference identity short-circuit (`if self is other: return True`) and sequential snapshotting under respective locks (`with self._lock:` then `with other._lock:`), completely eliminating self-comparison deadlocks (`t == t`, `t in [t]`) and AB-BA cross-thread lock inversion deadlocks.
+  2. Hardened target validation and defaults in `KillSwitchState` (`src/agentxdr/models/killswitch.py`):
+     - Safely handled `target_id` validation prior to calling `.strip()` across `activate` and `deactivate`.
+     - Defaulted `None`, empty string `""`, or whitespace strings `"   "` to `"*"` for `KillSwitchScope.GLOBAL`.
+     - Enforced `ValueError("target_id must be a non-empty string")` for non-global scopes when `target_id` is None, empty, or whitespace.
+     - Handled safe deactivation for non-global scopes with invalid targets without raising exceptions.
+  3. Hardened tool name normalization in `ToolPolicy` (`src/agentxdr/models/policy.py`):
+     - Normalized tool names by stripping leading/trailing whitespace in `@field_validator("name")`.
+  4. Expanded unit test suite in `tests/unit/test_models.py`:
+     - Added `test_taint_self_equality_no_deadlock` and `test_taint_concurrent_cross_thread_equality_no_deadlock` verifying deadlock-free equality under concurrent cross-thread stress.
+     - Added `test_killswitch_target_validation_and_global_defaults` covering None/whitespace targets across `GLOBAL`, `AGENT`, and `TOOL` scopes.
+     - Added `test_tool_policy_name_whitespace_normalized` verifying whitespace stripping on tool names.
+  5. Verified 100% test pass rate:
+     - 71 unit tests in `tests/unit/test_models.py` passing in ~0.08s.
+     - 130 E2E tests in `tests/e2e/test_tier1_models.py` and `tests/e2e/test_tier2_models.py` passing in ~1.2s.
+     - Total: 201 tests passing, 0 failures, 0 regressions.
+* **Context for Next Agent:**
+  - Milestone 1 is hardened, thread-safe, and fully verified.
+  - Ready for Milestone 2 (Deterministic Inline Guardrails and DLP Engine).

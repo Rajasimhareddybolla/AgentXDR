@@ -582,6 +582,10 @@ tools:
         policy_with_wrong_hash = policy.model_copy(update={"policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"})
         assert policy_with_wrong_hash.verify_hash() is False
 
+    def test_tool_policy_name_whitespace_normalized(self) -> None:
+        tp = ToolPolicy(name="  execute_code  ", tier=ToolTier.AUTOMATIC)
+        assert tp.name == "execute_code"
+
 
 # ===========================================================================
 # 8. TaintState Model & State Machine Tests
@@ -668,6 +672,33 @@ class TestTaintState:
             concurrent.futures.wait(futures)
 
         assert len(state) == 400
+
+    def test_taint_self_equality_no_deadlock(self, sample_taint_state: TaintState) -> None:
+        sample_taint_state.add_taint("UNTRUSTED")
+        assert sample_taint_state == sample_taint_state
+        assert sample_taint_state in [sample_taint_state]
+        assert not (sample_taint_state != sample_taint_state)
+
+    def test_taint_concurrent_cross_thread_equality_no_deadlock(self) -> None:
+        t1 = TaintState("trace_shared", ["A", "B"])
+        t2 = TaintState("trace_shared", ["B", "A"])
+
+        def compare_forward() -> None:
+            for _ in range(500):
+                assert t1 == t2
+
+        def compare_reverse() -> None:
+            for _ in range(500):
+                assert t2 == t1
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            futures = [
+                executor.submit(compare_forward if i % 2 == 0 else compare_reverse)
+                for i in range(8)
+            ]
+            concurrent.futures.wait(futures, timeout=5.0)
+            for f in futures:
+                f.result()
 
 
 # ===========================================================================
@@ -877,6 +908,52 @@ class TestKillSwitch:
         )
         assert record.target_id == "*"
         assert sample_kill_switch.is_killed(agent_id="any_agent", trace_id="any_trace") is True
+
+    def test_killswitch_target_validation_and_global_defaults(self, sample_kill_switch: KillSwitchState) -> None:
+        # None target for GLOBAL defaults to "*"
+        rec1 = sample_kill_switch.activate(
+            scope=KillSwitchScope.GLOBAL,
+            target_id=None,
+            reason="Enterprise lock",
+            triggered_by="ciso",
+        )
+        assert rec1.target_id == "*"
+        assert sample_kill_switch.is_killed(agent_id="agent_x", trace_id="trace_y") is True
+
+        # Deactivate GLOBAL with None target
+        assert sample_kill_switch.deactivate(scope=KillSwitchScope.GLOBAL, target_id=None) is True
+        assert sample_kill_switch.is_killed(agent_id="agent_x", trace_id="trace_y") is False
+
+        # Whitespace-only target for GLOBAL defaults to "*"
+        rec2 = sample_kill_switch.activate(
+            scope=KillSwitchScope.GLOBAL,
+            target_id="   ",
+            reason="Total shutdown",
+            triggered_by="ciso",
+        )
+        assert rec2.target_id == "*"
+        assert sample_kill_switch.deactivate(scope=KillSwitchScope.GLOBAL, target_id="") is True
+
+        # None or empty target for non-GLOBAL scope must raise ValueError
+        with pytest.raises(ValueError, match="target_id must be a non-empty string"):
+            sample_kill_switch.activate(
+                scope=KillSwitchScope.AGENT,
+                target_id=None,
+                reason="Compromised agent",
+                triggered_by="admin",
+            )
+
+        with pytest.raises(ValueError, match="target_id must be a non-empty string"):
+            sample_kill_switch.activate(
+                scope=KillSwitchScope.TOOL,
+                target_id="",
+                reason="CVE",
+                triggered_by="admin",
+            )
+
+        # Deactivating non-GLOBAL with None/empty safely returns False
+        assert sample_kill_switch.deactivate(scope=KillSwitchScope.AGENT, target_id=None) is False
+        assert sample_kill_switch.deactivate(scope=KillSwitchScope.TOOL, target_id="") is False
 
 
 # ===========================================================================
