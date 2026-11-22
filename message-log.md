@@ -170,3 +170,27 @@
 ### Test Results
 
 - **565 passed / 0 failed / 17 skipped** across all tiers
+
+---
+
+## Milestone 5 — M5: MCP Security Proxy (Phase 2)
+
+**Completed:** 2026-11-22T18:36:38Z  
+**Commit:** `7a48096` → pushed to `origin/main`
+
+### Deliverables
+
+| Module | Description |
+|--------|-------------|
+| `src/agentxdr/mcp/schema_registry.py` | `McpSchemaRegistry`: canonical SHA-256 computation over `(name, description, inputSchema)` and policy pinning |
+| `src/agentxdr/mcp/injection_scanner.py` | `McpInjectionScanner`: regex pattern scanning for prompt injections in tool descriptions & responses (ASI01) |
+| `src/agentxdr/mcp/tool_filter.py` | `McpToolFilter`: catalog filtering rejecting shadow tools and hash mismatches (ASI04) |
+| `src/agentxdr/mcp/call_enforcer.py` | `McpCallEnforcer`: inline zero-trust execution enforcement & return payload DLP sanitization + taint tagging |
+| `src/agentxdr/mcp/proxy.py` | `McpProxy` and `create_fastapi_mcp_app()` serving JSON-RPC 2.0 `/mcp/tools/list` and `/mcp/tools/call` |
+| `tests/unit/test_mcp_proxy.py` | 25 unit tests covering registry, scanner, filter, enforcer |
+| `tests/e2e/test_tier1_mcp.py` | 7 E2E tests for health, shadow tool removal, schema verification, blocked/pending/approved calls, DLP + taint |
+| `tests/e2e/test_tier2_mcp.py` | 5 boundary tests: empty catalogs, missing description fields, deeply nested JSON sanitization, concurrent tool calls, sha256: prefix normalization |
+
+### Test Results
+
+- **602 passed / 0 failed / 17 skipped** across all tiers
