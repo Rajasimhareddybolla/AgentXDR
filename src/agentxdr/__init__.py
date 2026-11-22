@@ -11,6 +11,14 @@ from agentxdr.guardrails import (
     DlpMasker,
     DlpResult,
 )
+from agentxdr.mcp import (
+    McpCallEnforcer,
+    McpInjectionScanner,
+    McpProxy,
+    McpSchemaRegistry,
+    McpToolFilter,
+    create_fastapi_mcp_app,
+)
 from agentxdr.models import (
     AgentEvent,
     BudgetsConfig,
@@ -31,6 +39,16 @@ from agentxdr.models import (
 from agentxdr.policy import (
     PolicyEvaluator,
     load_policy_yaml,
+)
+from agentxdr.proxy import (
+    GatewayConfig,
+    InspectionResult,
+    LlmGateway,
+    RequestInspector,
+    ResponseInspector,
+    SecurityRefusal,
+    SessionManager,
+    build_refusal,
 )
 
 __version__ = "0.1.0"
@@ -61,4 +79,18 @@ __all__ = [
     "load_policy_yaml",
     "CircuitBreaker",
     "CircuitBreakerVerdict",
+    "LlmGateway",
+    "GatewayConfig",
+    "SecurityRefusal",
+    "InspectionResult",
+    "SessionManager",
+    "RequestInspector",
+    "ResponseInspector",
+    "build_refusal",
+    "McpSchemaRegistry",
+    "McpInjectionScanner",
+    "McpToolFilter",
+    "McpCallEnforcer",
+    "McpProxy",
+    "create_fastapi_mcp_app",
 ]
