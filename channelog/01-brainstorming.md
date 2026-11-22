@@ -65,15 +65,31 @@ To finalize technical choices for the subsequent implementation phases, the foll
 
 The following documentation has been generated and validated:
 
-* [`design/decisions.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/design/decisions.md): Architecture Decision Records (ADRs 001–007).
-* [`design/design.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/design/design.md): Full system specification and integration contracts.
-* [`docs/architecture.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/docs/architecture.md): Trust boundaries, dual-path latency mechanics, and fail-safe postures.
+* [`design/decisions.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/design/decisions.md): Architecture Decision Records (ADRs 001–008, including ADR-008 Visual Control Plane).
+* [`design/design.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/design/design.md): Full system specification, Section 7 SOC War-Room Cockpit & Agent Blueprint.
+* [`docs/architecture.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/docs/architecture.md): Trust boundaries, dual-path latency mechanics, and Section 6 Visual Topology Architecture.
 * [`docs/threat-matrix.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/docs/threat-matrix.md): Exhaustive OWASP ASI01–ASI10 defense mapping.
-* [`docs/components.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/docs/components.md): Subsystem specifications, schemas, and interface definitions.
+* [`docs/components.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/docs/components.md): Subsystem specifications, schemas, interface definitions, and Subsystem 8 Visual Canvas.
 * [`docs/kql-hunting.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/docs/kql-hunting.md): KQL-Lite query grammar and SOC threat-hunting playbooks.
 * [`docs/validation-fleet.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/docs/validation-fleet.md): 3-agent reference fleet and 5 canonical attack replay scenarios.
 * [`docs/roadmap.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/docs/roadmap.md): Multi-phase execution plan and next-gen agentic research frontiers.
 * [`README.md`](file:///Users/raja/Desktop/Ai-Learn/AgentXDR/README.md): Project overview, architecture diagrams, and "How It Works" guide.
+
+---
+
+## 5. Visual Control Plane & Live Execution Cockpit (Requirement Addition)
+
+In response to the requirement for rich graphical agent mapping and real-time execution observability:
+1. **Agent Topology & Capability Blueprint (Static View):**
+   * Maps originating **Human User Principal** (`user_id`, avatar, department, assigned roles, effective token clearances).
+   * Maps **Agent Digital Twin** (ID, foundation model, active SemVer policy, goal anchor, live status badge).
+   * Maps **Bound Context Sources** (SHA-256 pinned System Instructions, RAG knowledge stores with RBAC ACLs, Persistent Memory with rollback support).
+   * Maps **Tiered MCP Tools** (🟢 Automatic, 🟡 Privileged HITL, 🔴 Blocked) with verified SHA-256 schema status and egress destinations.
+   * Maps **RCE Sandbox Enclave** (`net=none`, `ro-fs`, cgroups caps).
+2. **Live Graphical Execution DAG (Dynamic View):**
+   * Renders real-time causal execution DAG with moving data particles.
+   * Visualizes pulsing active nodes, visible dynamic taint badges (`⚠️ UNTRUSTED_EXTERNAL`), step-by-step drift progression ($R_t$).
+   * Direct on-canvas active containment controls (Kill Trace, Quarantine Agent, Rollback Memory).
 
 ---
 

@@ -17,6 +17,7 @@
   * **Asynchronous Warm Path (200–800ms P95):** Real-time Action-Graph (DAG) construction, CPU ONNX semantic drift scoring, ASI09 persuasion analysis, and DuckDB analytical SIEM ingestion.
 * **100% OWASP Agentic Top 10 Coverage:** Purpose-built defenses for ASI01 through ASI10, including supply chain rug-pulls, memory poisoning, inter-agent replay, and human-in-the-loop social engineering.
 * **Anti-ASI09 Structural HITL Interface:** Isolates persuasive agent prose from the decision boundary, presenting raw deterministic diffs and prominent taint warnings to human approvers.
+* **Visual Control Plane & Topology Mapping:** Interactive digital-twin canvas mapping originating human users, effective privileges, attached context sources, tiered MCP tools (🟢 Auto, 🟡 HITL, 🔴 Blocked), and live animated causal execution graphs.
 * **Write-Ahead Memory Rollback:** Append-only snapshot logging allows instant point-in-time and taint-based rollbacks of poisoned memory and RAG stores.
 * **Zero-GPU Footprint:** The complete security stack runs on standard commodity CPU infrastructure.
 
@@ -114,6 +115,11 @@ AgentEvents
 | summarize blocked_count = count(), max_drift = max(drift_snapshot.composite_score) by agent_id, payload_redacted.tool_name
 | sort by blocked_count desc
 ```
+
+### 8. Visual Control Plane & Live Execution Cockpit
+To eliminate black-box obscurity, AgentXDR renders a real-time, interactive canvas displaying both the static capability blueprint and live dynamic executions:
+* **Agent Topology & User Mapping:** Maps the originating human user (`user_id`, department, assigned roles, effective token clearances) to the Agent Hub, all bound context sources (System Prompts, RAG collections, Memory stores), and attached MCP tools categorized by tier (🟢 Automatic, 🟡 Privileged HITL, 🔴 Blocked) with verified SHA-256 schema pins.
+* **Live Graphical Execution DAG:** Renders the runtime causal flow with moving data particles, pulsing execution nodes, dynamic taint flags (`⚠️ UNTRUSTED_EXTERNAL`), step-by-step drift progression ($R_t$), and direct 1-click containment buttons (Kill Trace, Quarantine Agent, Rollback Memory) directly inside the visual canvas.
 
 ---
 

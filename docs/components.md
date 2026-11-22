@@ -195,3 +195,118 @@ $$R_t = \min\Big(1.0,\; 0.45\,S_{\text{policy}}(t) + 0.25\,S_{\text{graph}}(t) +
 ### 7.3 Anti-ASI09 HITL Approval Interface
 * **Deterministic Diff Pane (Primary View):** Displays verified tool target, schema hash, raw parameter diffs, and Taint Warning banner.
 * **Untrusted Agent Rationale Pane (Secondary View):** Collapsed by default; badged as `UNTRUSTED AGENT OUTPUT`; highlights persuasion and urgency classifier scores.
+
+
+---
+
+## 8. Subsystem 8: Visual Control Plane & Live Agent Topology Mapping (AgentXDR Canvas)
+
+To eliminate the "black-box" dilemma of autonomous agent systems, AgentXDR provides an enterprise-grade visual control cockpit featuring two synchronized graphical views: the **Agent Topology & Capability Map** (static governance blueprint) and the **Live Graphical Execution DAG** (dynamic real-time war-room).
+
+```mermaid
+flowchart LR
+    subgraph USER_LAYER["1. Originating Human Principal"]
+        USER["User: alice@enterprise.com<br/>Role: SecOps Lead<br/>Scopes: kb:read, jira:create"]
+    end
+
+    subgraph AGENT_LAYER["2. Agent Digital Twin"]
+        AGENT["Agent: doc-support-agent<br/>Model: gpt-4o | Policy: v1.0.0<br/>Status: HEALTHY (R_t: 0.12)"]
+    end
+
+    subgraph CONTEXT_LAYER["3. Bound Context Sources"]
+        SYS["System Prompt<br/>[SHA-256 Pinned]"]
+        RAG["RAG: SecOps KB<br/>[ACL Enforced]"]
+        MEM["Memory Store<br/>[Snapshots On]"]
+    end
+
+    subgraph TOOLS_LAYER["4. Tools & MCP Periphery"]
+        T1["search_kb<br/>🟢 Automatic"]
+        T2["create_jira_ticket<br/>🟡 Privileged HITL"]
+        T3["shell_exec<br/>🔴 Blocked"]
+    end
+
+    subgraph ENCLAVE_LAYER["5. Execution Enclave"]
+        SANDBOX["Rootless Docker<br/>net=none, ro-fs"]
+    end
+
+    USER -->|Authenticated Delegation| AGENT
+    SYS & RAG & MEM -->|Context Ingestion| AGENT
+    AGENT -->|Governed Calls| T1 & T2 & T3
+    AGENT -->|Isolated Code Exec| SANDBOX
+```
+
+### 8.1 View 1: Agent Topology & Capability Blueprint
+
+Whenever an agent is onboarded or inspected in the SOC console, AgentXDR renders a comprehensive capability blueprint:
+
+1. **User-Principal Node (The Human Origin):**
+   * Displays verified user identity: username, email, department/tenant, authenticated session ID.
+   * Visualizes assigned roles and effective token permissions computed via permission intersection:
+     $$\text{Effective Scope} = \text{Scope}_{\text{User}} \cap \text{Scope}_{\text{Agent Role}} \cap \text{Scope}_{\text{Task Policy}}$$
+   * Displays token lifetime and delegation chain hierarchy.
+2. **Agent Digital Twin Node (Central Command Hub):**
+   * Displays Agent Name, registered ID, foundation model endpoint, pinned SemVer policy version, and approval timestamp.
+   * Displays the canonical `goal_anchor` text and task boundaries.
+   * Real-time status pill badge:
+     * 🟢 `HEALTHY`: Normal operation, $R_t < 0.55$.
+     * 🔵 `IN_FLIGHT`: Actively evaluating reasoning turn.
+     * 🟡 `HITL_PENDING`: Execution paused awaiting human adjudication.
+     * 🟠 `DEGRADED`: Elevated drift or velocity warnings.
+     * 🔴 `QUARANTINED` / `KILLED`: Bus severed, execution frozen.
+   * Live composite drift meter ($R_t \in [0.0, 1.0]$) decomposing policy, graph, velocity, and semantic drift.
+3. **Context Periphery Cards:**
+   * **System Prompt:** Displays SHA-256 integrity hash, character count, and immutability status.
+   * **RAG Collections:** Lists attached vector/semantic collections, user ACL boundary rules, and injection sanitization status.
+   * **Persistent Memory:** Displays memory store namespace, snapshotting state, write-gate status, and active commit count.
+4. **Tool & MCP Periphery Cards:**
+   * Grouped visually by MCP server (e.g., `jira-mcp-server`, `email-gateway`, `postgres-mcp`).
+   * Each tool card renders:
+     * Authorization Tier Pill: 🟢 `automatic`, 🟡 `privileged_hitl`, 🔴 `blocked`.
+     * Cryptographic Schema Pin: `SHA-256: VERIFIED` (green check) or `MISMATCH / POISONED` (red alert).
+     * Parameter Schema summary and outbound egress domain allowlists.
+5. **Execution Enclave Card:**
+   * Displays active `SandboxProvider` type (`DockerRootlessProvider` vs `SubprocessRestrictedProvider`).
+   * Renders active security constraints: `--network=none`, `--read-only`, RAM limit (256 MB), CPU timeout (10s), dropped capabilities (`CAP_DROP=ALL`).
+
+---
+
+### 8.2 View 2: Live Graphical Execution DAG (The War-Room Cockpit)
+
+During active agent reasoning sessions or retrospective incident forensic investigations, AgentXDR renders an interactive, animated causal execution graph:
+
+```mermaid
+flowchart LR
+    U["👤 User: alice@corp"] -->|Prompt| P["📝 USER_INPUT<br/>DLP: Clean"]
+    P -->|Ingest| R["📚 RAG_ACCESS<br/>ACL: Verified"]
+    R -->|Context| L1["🧠 LLM_STEP 1<br/>Reasoning Turn"]
+    L1 -->|Call| T1["⚙️ TOOL: search_kb<br/>🟢 Auto: Allowed (8ms)"]
+    T1 -->|Return| L2["🧠 LLM_STEP 2<br/>Taint: ⚠️ UNTRUSTED"]
+    L2 -->|Call| T2["⚙️ TOOL: send_email<br/>🟡 HITL Paused (Ticket #104)"]
+    T2 -.->|Approved| OUT["📤 FINAL_OUTPUT<br/>Masked PII"]
+
+    classDef allowed fill:#e6ffed,stroke:#2ea44f,stroke-width:2px;
+    classDef paused fill:#fff8c5,stroke:#d4a72c,stroke-width:2px;
+    classDef tainted fill:#ffebe9,stroke:#cf222e,stroke-width:2px;
+    classDef user fill:#ddf4ff,stroke:#0969da,stroke-width:2px;
+
+    class U user;
+    class T1 allowed;
+    class T2 paused;
+    class L2 tainted;
+```
+
+#### Dynamic Visual States & Capabilities
+* **Pulsing Active Nodes:** The step currently being evaluated pulses with an animated boundary.
+* **Animated Data Particles:** Edges feature moving particles representing streaming tokens or JSON-RPC payloads.
+* **Dynamic Taint Badges:** When an external document or unverified tool output is ingested, a bright visual badge (`⚠️ UNTRUSTED_EXTERNAL` or `🔒 CONFIDENTIAL_RAG`) attaches to the causal arrow and propagates visibly downstream to all subsequent nodes.
+* **Step-by-Step Drift Decomposition Bar:** Displayed below each LLM node showing the exact progression of risk:
+  $$R_t = 0.10 \longrightarrow 0.35 \longrightarrow 0.78 \longrightarrow 0.92 \text{ (TRIPPED)}$$
+* **Interactive Node Inspector:** Clicking any node in the canvas opens an inspection drawer showing:
+  * Raw and redacted JSON payloads.
+  * Deterministic rule evaluations and OWASP category tags.
+  * Step latency ($12\text{ ms}$) and cumulative token cost (\$0.004).
+* **Direct Canvas Action Controls:** Security operators can execute active containment directly from the graph:
+  * 🔴 **Kill Trace:** Halts the live session instantly.
+  * 🛑 **Quarantine Agent:** Isolates the agent from the inter-agent bus.
+  * ⏪ **Rollback Memory:** One-click rollback of all memory/RAG mutations up to the selected step.
+  * 🛡️ **Escalate to HITL:** Pauses remaining tool calls for manual operator review.

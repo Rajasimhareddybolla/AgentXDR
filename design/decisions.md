@@ -80,3 +80,23 @@ This document serves as the persistent log of key architectural decisions, ratio
   * **Redis:** In-memory caching, sub-millisecond kill switches, active session taint sets, circuit-breaker counters, and Pub/Sub / Streams bus.
   * **DuckDB:** Embedded analytical columnar OLAP for high-speed KQL-Lite threat hunting queries over millions of immutable `AgentEvent` records on local CPU.
 * **Consequences:** Eliminates external GPU requirements, achieves zero-copy columnar analytics, and keeps deployment footprints lightweight.
+
+
+---
+
+## ADR-008: Comprehensive Agent Topology, User-Principal Mapping, and Live Graphical Execution Cockpit
+* **Date:** 2026-11-22
+* **Status:** Accepted
+* **Context:** Security operators and AI governance teams struggle with the opaque "black-box" nature of autonomous multi-agent systems. Without a visual control plane, operators cannot readily verify: (1) which human user initiated an action and their effective privileges, (2) the complete capability perimeter of an agent (all attached tools, tiers, and context sources), and (3) what the agent is causally doing in real-time as it traverses reasoning loops and tool chains.
+* **Decision:** Implement a dual-mode **Visual Control Plane (AgentXDR Canvas)** in the SOC War-Room console:
+  1. **Agent Topology & Capability Map (Blueprint View):**
+     * **User-Principal Node:** Maps originating human identity (`user_id`, avatar, department, assigned roles, effective token clearance) and authenticated session link.
+     * **Agent Digital Twin Node:** Central hub showing agent ID, model, active policy SemVer, goal anchor, live health status (`HEALTHY`, `HITL_PENDING`, `QUARANTINED`, `KILLED`), and composite drift score.
+     * **Context Periphery:** Explicitly models all attached context sources (System Instructions with SHA-256 integrity, RAG knowledge collections with RBAC ACL tags, Persistent Memory with snapshot support).
+     * **Tool & MCP Periphery:** Visual cards for each attached tool color-coded by tier (🟢 Automatic, 🟡 Privileged HITL, 🔴 Blocked), verified SHA-256 schema pin status, parameter limits, and target egress endpoints.
+     * **Sandbox Enclave:** Visual representation of container boundaries (`net=none`, `ro-fs`, resource limits).
+  2. **Live Graphical Execution DAG (Cockpit / War-Room View):**
+     * Renders a real-time causal Directed Acyclic Graph (DAG) using React Flow / canvas mapping every step of active sessions:
+       $$\text{User} \longrightarrow \text{User Prompt} \longrightarrow \text{Inline PEP} \longrightarrow \text{RAG Context} \longrightarrow \text{LLM Reasoning} \longrightarrow \text{Tool Calls} \longrightarrow \text{Response}$$
+     * Animated data flow with moving particles, pulsing active nodes, dynamic taint labels badge propagation (e.g., `⚠️ UNTRUSTED_EXTERNAL`), step-by-step drift curve decomposition, and interactive 1-click containment buttons (Kill Trace, Quarantine Agent, Memory Rollback) directly embedded in the graphical canvas.
+* **Consequences:** Eliminates black-box opacity. SecOps teams, auditors, and leadership gain full visual clarity, immediate situational awareness, and surgical control over autonomous agent operations.

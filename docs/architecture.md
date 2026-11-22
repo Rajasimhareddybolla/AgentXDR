@@ -160,3 +160,33 @@ AgentXDR provides four drop-in touchpoints requiring zero code changes to core a
 | **MCP Schema Registry Unreachable** | **Fail-Closed** (reject unverified tool calls). | Eliminates supply-chain rug-pull risks (ASI04) during infrastructure outages. |
 | **Warm Path Detector Lag** | **Hot Path Continues**; Telemetry buffers in Redis Streams; raises `DETECTOR_DEGRADED` SOC alert. | Preserves agent uptime without dropping deterministic boundary protection. |
 | **Sandbox Daemon Unreachable** | **Fail-Closed** (never execute untrusted code on the host system). | Guarantees zero host RCE under all conditions (ASI05). |
+
+
+---
+
+## 6. Visual Control Plane & Live Agent Topology Architecture
+
+AgentXDR introduces an interactive, graphical control plane that visualizes the exact operational posture of every agent across the enterprise. It solves the "black-box" dilemma by providing two synchronized views:
+
+```mermaid
+flowchart TD
+    subgraph BLUEPRINT["Static Capability Blueprint (Digital Twin)"]
+        U_NODE["👤 User Principal<br/>Identity & Scopes"] --> A_NODE["🤖 Agent Hub<br/>Model, Policy, Status"]
+        C_NODES["📚 Context Perimeter<br/>System Prompt, RAG ACLs, Memory"] --> A_NODE
+        A_NODE --> T_NODES["⚙️ Tool Perimeter<br/>Auto, HITL, Blocked MCP"]
+        A_NODE --> S_NODE["📦 Sandbox Enclave<br/>Rootless Docker net=none"]
+    end
+
+    subgraph COCKPIT["Dynamic Real-Time War-Room (Live DAG)"]
+        STEP1["USER_INPUT"] --> STEP2["INLINE PEP"]
+        STEP2 --> STEP3["RAG RETRIEVAL"]
+        STEP3 --> STEP4["LLM REASONING"]
+        STEP4 --> STEP5["TOOL EXECUTION"]
+        STEP5 --> STEP6["ACTIVE CONTAINMENT"]
+    end
+
+    BLUEPRINT -.->|Configures & Governs| COCKPIT
+```
+
+1. **The Agent Topology & Context Blueprint:** Displays the originating human user, their effective permissions, the agent's digital twin, all attached context sources, every authorized tool categorized by authorization tier (🟢 Automatic, 🟡 Privileged HITL, 🔴 Blocked), and containerized execution boundaries.
+2. **The Live Graphical Execution Cockpit:** Renders the runtime causal DAG in real time, animating data particles, attaching visible taint badges (`⚠️ UNTRUSTED_EXTERNAL`), plotting the step-by-step drift curve ($R_t$), and embedding 1-click active response buttons (Kill Trace, Quarantine Agent, Rollback Memory) directly inside the visual canvas.

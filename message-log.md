@@ -13,3 +13,12 @@
 * **Context for Next Agent:**
   * Ready to transition to Phase 1: Core Data Models & Deterministic Engine (`agentxdr-core`).
   * Consult `design/decisions.md` and `docs/roadmap.md` for execution milestones.
+
+## [2026-11-22] - Visual Control Plane & Live Agent Topology Specification Added
+
+* **Agent Role:** Senior Designer & Architect
+* **Status:** Requirement Integrated
+* **Summary of Actions:**
+  1. Authored ADR-008 in `design/decisions.md` detailing the dual-mode Visual Control Plane (Agent Topology Blueprint & Live Graphical Execution DAG).
+  2. Specified Subsystem 8 in `docs/components.md` defining the visual contracts for User-Principal mapping, Agent Hub, Context perimeter, Tiered MCP tools (🟢 Auto, 🟡 HITL, 🔴 Blocked), and real-time interactive canvas controls.
+  3. Integrated visual topology architecture into `docs/architecture.md`, `README.md`, `design/design.md`, and `channelog/01-brainstorming.md`.
