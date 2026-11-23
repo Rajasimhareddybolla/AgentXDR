@@ -20,13 +20,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True, help="Sub-command to execute")
 
-    # 1. serve
-    serve_parser = subparsers.add_parser("serve", help="Start the unified AgentXDR runtime server")
+    # 1. serve / server
+    serve_parser = subparsers.add_parser(
+        "serve",
+        aliases=["server"],
+        help="Start the unified AgentXDR runtime server",
+    )
     serve_parser.add_argument("--host", default="0.0.0.0", help="Host interface to bind (default: 0.0.0.0)")
     serve_parser.add_argument("--port", type=int, default=8000, help="Port to listen on (default: 8000)")
     serve_parser.add_argument("--policy", help="Path to declarative policy YAML file")
     serve_parser.add_argument("--db-path", default=":memory:", help="DuckDB database path (default: :memory:)")
-    serve_parser.add_argument("--upstream-url", default="https://api.openai.com/v1", help="Upstream LLM base URL")
+    serve_parser.add_argument("--upstream-url", default="https://api.meta.ai/v1", help="Upstream LLM base URL (default: https://api.meta.ai/v1)")
 
     # 2. kql
     kql_parser = subparsers.add_parser("kql", help="Execute a KQL-Lite query against DuckDB telemetry")
@@ -149,7 +153,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     parsed = parser.parse_args(argv)
 
-    if parsed.command == "serve":
+    if parsed.command in ("serve", "server"):
         return cmd_serve(parsed)
     elif parsed.command == "kql":
         return cmd_kql(parsed)
