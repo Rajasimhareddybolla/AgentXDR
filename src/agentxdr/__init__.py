@@ -87,6 +87,7 @@ from agentxdr.persuasion import (
     HitlTicket,
     PersuasionClassifier,
     PersuasionResult,
+    PersuasionRiskLevel,
     PersuasionSpan,
     PersuasionTactic,
     TicketStatus,
@@ -186,6 +187,7 @@ __all__ = [
     # Persuasion & HITL Governance (M9)
     "PersuasionClassifier",
     "PersuasionResult",
+    "PersuasionRiskLevel",
     "PersuasionSpan",
     "PersuasionTactic",
     "HitlReviewGate",

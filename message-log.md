@@ -274,3 +274,27 @@
 - **Forensic Auditor:** `auditor_1` (CLEAN)
 
 
+---
+
+## Milestone 9 — M9: Anti-ASI09 Persuasion & Urgency Governance (Phase 3)
+
+**Completed:** 2026-11-23T13:26:00Z  
+**Commit:** `feat(persuasion): implement anti-ASI09 persuasion classifier and structural HITL gate (M9)` → pushed to `origin/main`
+
+### Deliverables
+
+| Module | Description |
+|--------|-------------|
+| `src/agentxdr/persuasion/classifier.py` | `PersuasionClassifier` detecting 6 OWASP ASI09 tactics (`ARTIFICIAL_URGENCY`, `COERCION_AND_FEAR`, `FALSE_AUTHORITY`, `SCARCITY_PRESSURE`, `OBFUSCATION_COMPLEXITY`, `FLATTERY_AND_SYCOPHANCY`), `PersuasionTactic`, `PersuasionRiskLevel`, `PersuasionResult` (frozen Pydantic v2 model), multi-signal acoustic/capitalization modifiers, readability/legalese evaluation, Independent Hazard Fusion, and recursive argument crawling with cycle detection and privileged tool boost |
+| `src/agentxdr/persuasion/hitl_gate.py` | `HitlReviewGate`, `HitlTicket`, `TicketStatus` with thread-safe lifecycle management, strict structural separation between deterministic diff view and segregated untrusted agent rationale pane (`UNTRUSTED AGENT OUTPUT`), distinct dual-approver validation, and dynamic policy escalation (`Verdict.PAUSE_FOR_HITL`) |
+| `src/agentxdr/persuasion/__init__.py` | Package re-exports for all persuasion and HITL gate symbols |
+| `src/agentxdr/__init__.py` | Top-level package re-exports for all M9 symbols (`PersuasionClassifier`, `PersuasionTactic`, `PersuasionRiskLevel`, `PersuasionResult`, `HitlReviewGate`, `HitlTicket`, `TicketStatus`) in `__all__` |
+| `tests/unit/test_persuasion.py` | 95 comprehensive unit tests covering all 6 tactics, multi-vector synergy, benign false-positive suppression, tool call argument crawling, circular reference safety, structural separation invariance, dual-approver state machine, concurrency, and dynamic escalation |
+
+### Test Results
+- **823 passed / 0 failed / 17 skipped** across all repository tests (95/95 M9 unit tests passed, 0 regressions)
+
+### Verification Wave Sign-Offs
+- **Reviewers:** `reviewer_m9_r2_1`, `reviewer_m9_r2_2` (APPROVED)
+- **Challengers:** `challenger_m9_r2_1`, `challenger_m9_r2_2` (APPROVED)
+- **Forensic Auditor:** `auditor_m9_r2_1` (CLEAN)
