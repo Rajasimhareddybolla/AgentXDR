@@ -223,3 +223,27 @@
 - **Milestone 5 (M5) — MCP Security Proxy:** 37 tests (`7a48096`)
 - **Milestone 6 (M6) — In-Process Python SDK:** 27 tests (`cc8679c`)
 - **Full Project Test Suite:** **629 passed / 0 failed / 17 skipped** across all tiers
+
+---
+
+## Milestone 7 — M7: Action-Graph DAG & Visual Topology Model (Phase 3)
+
+**Completed:** 2026-11-23T10:10:00Z  
+**Commit:** `feat(graph): implement live action-graph DAG and visual topology model (M7)` → pushed to `origin/main`
+
+### Deliverables
+
+| Module | Description |
+|--------|-------------|
+| `src/agentxdr/graph/models.py` | Graph node/edge definitions, `MotifType`, `MotifSeverity`, and `MotifViolation` |
+| `src/agentxdr/graph/action_graph.py` | `ActionGraph` NetworkX DiGraph wrapper with thread safety, trace isolation, DAG query helpers (`is_dag`, `has_cycles`, `get_topological_order`), atomic `export_dict`, and lossless fallback reconstruction |
+| `src/agentxdr/graph/motif_detector.py` | `MotifAnomalyDetector` scanning 5 attack motifs (taint subgraphs, execution loops, tool jumping, privilege escalation, fan-out bursts) with casing normalization, wildcard delegation support, administrative role recognition, multi-tenant loop isolation, streak aggregation, and diamond DAG deduplication |
+| `src/agentxdr/topology/models.py` | 5-layer visual topology models (`UserPrincipalNode`, `AgentHubNode`, `ContextPerimeterNode`, `McpToolNode`, `SandboxEnclaveNode`) with React Flow node styling dictionaries, active tool Mermaid highlighting (`class <ids> active;`), and defensive label escaping |
+| `src/agentxdr/topology/builder.py` | `AgentTopologyBuilder` constructing visual topology from policy and live events with `active_trace` alias support |
+| `src/agentxdr/__init__.py` | Top-level package re-exports for all 18 Milestone 7 graph and topology symbols |
+| `tests/unit/test_action_graph.py` | 40 unit tests covering models, DAG ingestion, motif detection, and adversarial edge cases |
+| `tests/unit/test_topology.py` | 21 unit tests covering topology building, overlays, React Flow styling, and Mermaid rendering |
+
+### Test Results
+- **690 passed / 0 failed / 17 skipped** across all repository tests (61/61 M7 unit tests passed)
+

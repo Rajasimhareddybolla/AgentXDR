@@ -4,6 +4,17 @@ from agentxdr.breakers import (
     CircuitBreaker,
     CircuitBreakerVerdict,
 )
+from agentxdr.graph import (
+    ActionGraph,
+    GraphEdge,
+    GraphEdgeType,
+    GraphNode,
+    GraphNodeType,
+    MotifAnomalyDetector,
+    MotifSeverity,
+    MotifType,
+    MotifViolation,
+)
 from agentxdr.guardrails import (
     AstSanitizer,
     AstSanitizerResult,
@@ -62,6 +73,17 @@ from agentxdr.sdk import (
     SdkTelemetry,
     guard_openai,
 )
+from agentxdr.topology import (
+    ActiveExecutionOverlay,
+    AgentHubNode,
+    AgentStatus,
+    AgentTopologyBuilder,
+    AgentTopologyModel,
+    ContextPerimeterNode,
+    McpToolNode,
+    SandboxEnclaveNode,
+    UserPrincipalNode,
+)
 
 __version__ = "0.1.0"
 
@@ -115,4 +137,24 @@ __all__ = [
     "AgentBus",
     "InterAgentEnvelope",
     "SdkTelemetry",
+    # Graph & Motif Detection (M7)
+    "ActionGraph",
+    "GraphNode",
+    "GraphEdge",
+    "GraphNodeType",
+    "GraphEdgeType",
+    "MotifType",
+    "MotifSeverity",
+    "MotifViolation",
+    "MotifAnomalyDetector",
+    # Visual Agent Topology (M7)
+    "AgentStatus",
+    "UserPrincipalNode",
+    "AgentHubNode",
+    "ContextPerimeterNode",
+    "McpToolNode",
+    "SandboxEnclaveNode",
+    "ActiveExecutionOverlay",
+    "AgentTopologyModel",
+    "AgentTopologyBuilder",
 ]
