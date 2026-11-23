@@ -1,0 +1,55 @@
+"""
+agentxdr.analytics — Embedded DuckDB SIEM store and KQL-Lite engine.
+"""
+from agentxdr.analytics.duckdb_store import DuckDbAnalyticsStore
+from agentxdr.analytics.kql import (
+    AggFunction,
+    BinaryOp,
+    ColumnRef,
+    CompiledQuery,
+    FunctionCall,
+    KqlCompiler,
+    KqlParser,
+    KqlPipeline,
+    KqlQuery,
+    KqlQueryResult,
+    Literal,
+    ParseError,
+    ProjectClause,
+    SortClause,
+    SummarizeClause,
+    TableSource,
+    TakeClause,
+    TopClause,
+    UnaryOp,
+    WhereClause,
+    parse,
+    tokenize,
+)
+
+__all__ = [
+    "DuckDbAnalyticsStore",
+    # KQL
+    "TableSource",
+    "WhereClause",
+    "ProjectClause",
+    "SummarizeClause",
+    "TakeClause",
+    "SortClause",
+    "TopClause",
+    "KqlPipeline",
+    "KqlQuery",
+    "BinaryOp",
+    "UnaryOp",
+    "ColumnRef",
+    "Literal",
+    "FunctionCall",
+    "AggFunction",
+    "tokenize",
+    "parse",
+    "ParseError",
+    "KqlParser",
+    "KqlCompiler",
+    "CompiledQuery",
+    "KqlQueryResult",
+]

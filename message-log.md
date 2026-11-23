@@ -298,3 +298,32 @@
 - **Reviewers:** `reviewer_m9_r2_1`, `reviewer_m9_r2_2` (APPROVED)
 - **Challengers:** `challenger_m9_r2_1`, `challenger_m9_r2_2` (APPROVED)
 - **Forensic Auditor:** `auditor_m9_r2_1` (CLEAN)
+
+
+---
+
+## Milestone 10 — M10: Embedded DuckDB Store & KQL-Lite SIEM Engine (Phase 3)
+
+**Completed:** 2026-11-23T14:48:00Z  
+**Commit:** `feat(analytics): implement embedded DuckDB store and KQL-Lite query compiler (M10)` → pushed to `origin/main`
+
+### Deliverables
+
+| Module | Description |
+|--------|-------------|
+| `src/agentxdr/analytics/duckdb_store.py` | `DuckDbAnalyticsStore`: Thread-safe DuckDB in-memory and file-based columnar storage for warm-path telemetry with schema DDL for `events`, view `"AgentEvents"`, `graph_edges`, `drift_snapshots`, `motif_violations`, polymorphic model ingestion, and `query_sql`/`query_kql` execution interfaces |
+| `src/agentxdr/analytics/kql/ast.py` | AST definitions for `TableSource`, `WhereClause`, `ProjectClause`, `SummarizeClause`, `TakeClause`, `SortClause`, `TopClause`, `FunctionCall`, expressions, aggregations, `KqlPipeline`, and `KqlQuery` type alias |
+| `src/agentxdr/analytics/kql/parser.py` | Pure-Python recursive descent tokenizer and parser supporting pipeline chaining, dotted column identifiers (`payload_redacted.tool_name`), `ago(<duration>)`, summarize aliases (`alias = agg()` and `agg() as alias`), `top <n> by <col> [asc\|desc]`, inline comments (`//`, `--`), and strict input validation (`ParseError`) |
+| `src/agentxdr/analytics/kql/compiler.py` | DuckDB SQL compiler with positional `?` bind parameters for 100% SQL injection immunity, DuckDB JSON arrow translation with `TRY_CAST(... AS DOUBLE)` for numeric comparison safety, parenthesized binary comparisons, subquery wrapping for post-summarize filters, and `CompiledQuery(NamedTuple)` supporting tuple unpacking and attribute access |
+| `src/agentxdr/analytics/__init__.py` | Package re-exports for `DuckDbAnalyticsStore`, `KqlParser`, `KqlCompiler`, `KqlPipeline`, `KqlQuery`, `CompiledQuery`, AST nodes and helpers |
+| `src/agentxdr/__init__.py` | Top-level package re-exports for all 21 Milestone 10 analytics symbols in `__all__` |
+| `tests/unit/test_duckdb_store.py` | 32 comprehensive unit tests covering store initialization, view creation, polymorphic ingestion, thread-safety, and query execution |
+| `tests/unit/test_kql_compiler.py` | 95 comprehensive unit tests covering AST, tokenizer, parser structure, error handling, 31 parser hardening edge cases, SQL generation, injection immunity, and live execution of all 5 Enterprise Threat Hunting Playbooks |
+
+### Test Results
+- **854 passed / 0 failed / 17 skipped** across all repository tests (127/127 M10 unit tests passed, 504 unit tests passed, 0 regressions)
+
+### Verification Wave Sign-Offs
+- **Reviewers:** `reviewer_3`, `reviewer_4` (APPROVED)
+- **Challengers:** `challenger_3`, `challenger_4` (APPROVED)
+- **Forensic Auditor:** `auditor_2` (CLEAN)
