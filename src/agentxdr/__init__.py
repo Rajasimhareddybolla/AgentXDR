@@ -82,6 +82,15 @@ from agentxdr.sdk import (
     SdkTelemetry,
     guard_openai,
 )
+from agentxdr.persuasion import (
+    HitlReviewGate,
+    HitlTicket,
+    PersuasionClassifier,
+    PersuasionResult,
+    PersuasionSpan,
+    PersuasionTactic,
+    TicketStatus,
+)
 from agentxdr.topology import (
     ActiveExecutionOverlay,
     AgentHubNode,
@@ -174,4 +183,12 @@ __all__ = [
     "TrajectoryPoint",
     "SemanticDriftResult",
     "SemanticDriftCalculator",
+    # Persuasion & HITL Governance (M9)
+    "PersuasionClassifier",
+    "PersuasionResult",
+    "PersuasionSpan",
+    "PersuasionTactic",
+    "HitlReviewGate",
+    "HitlTicket",
+    "TicketStatus",
 ]
