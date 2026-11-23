@@ -100,10 +100,20 @@ goal_anchor:
 tools:
   - name: "safe_search"
     tier: "automatic"
+  - name: "read_memory"
+    tier: "automatic"
+  - name: "write_memory"
+    tier: "automatic"
   - name: "execute_sql"
     tier: "privileged_hitl"
   - name: "system_shell"
     tier: "blocked"
+taint_rules:
+  - id: "TR-MEM-01"
+    match_taints: ["SUSPECTED_INJECTION"]
+    blocked_tools: ["write_memory"]
+    action: "BLOCK"
+    owasp_id: "ASI08"
 budgets:
   max_turns: 50
   max_tool_calls: 100
@@ -203,6 +213,8 @@ budgets:
     # -----------------------------------------------------------------------
     print_banner(4, "Schema-Pinned MCP Tool Governance & Tiering")
     from agentxdr.mcp.schema_registry import McpSchemaRegistry
+    from agentxdr.sdk.context import AgentXDRContext
+    from agentxdr.sdk.memory import MemoryGuard
 
     registry = McpSchemaRegistry()
     raw_schema = {
@@ -216,12 +228,61 @@ budgets:
     }
     expected_hash = registry.compute_tool_hash(raw_schema)
     registry.register("safe_search", expected_hash)
-    print(f"[*] Registered MCP Tool: safe_search")
-    print(f"[*] Tool Schema SHA-256 Pin: {expected_hash}")
+    print(f"[*] Registered MCP Tool: safe_search (SHA-256: {expected_hash[:16]}...)")
     is_valid, verified_hash = registry.verify_tool(raw_schema)
     assert is_valid
     assert verified_hash == expected_hash
-    print("  -> PASSED: Schema pin registered and verified.")
+
+    # Register MCP Memory Tools
+    mem_schema = {
+        "name": "write_memory",
+        "description": "Persist stateful key-value memory with write-ahead logging",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"key": {"type": "string"}, "value": {"type": "string"}},
+            "required": ["key", "value"],
+        },
+    }
+    mem_hash = registry.compute_tool_hash(mem_schema)
+    registry.register("write_memory", mem_hash)
+    print(f"[*] Registered MCP Memory Tool: write_memory (SHA-256: {mem_hash[:16]}...)")
+    assert registry.verify_tool(mem_schema)[0]
+
+    # Test MemoryGuard Write-Ahead Logging & Taint Poisoning Prevention (ASI08)
+    ctx_clean = AgentXDRContext(
+        user_id="analyst",
+        user_roles=["secops"],
+        agent_id="secops-autonomous-agent",
+        trace_id="trace-mem-001",
+    )
+    mem_guard = MemoryGuard(ctx=ctx_clean)
+    
+    class MockStore:
+        def __init__(self):
+            self.data = {}
+        def set(self, k, v):
+            self.data[k] = v
+
+    mock_store = MockStore()
+    write_res = mem_guard.write(mock_store, "trusted_user_pref", "dark_mode_enabled")
+    assert write_res.allowed
+    assert mock_store.data["trusted_user_pref"] == "dark_mode_enabled"
+    print(f"[*] Memory Guard Clean Write: ALLOWED (Snapshot WAL ID: {write_res.snapshot_id[:8]}...)")
+
+    # Tainted context with SUSPECTED_INJECTION
+    ctx_tainted = AgentXDRContext(
+        user_id="analyst",
+        user_roles=["secops"],
+        agent_id="secops-autonomous-agent",
+        trace_id="trace-mem-002",
+    )
+    ctx_tainted.add_taint("SUSPECTED_INJECTION")
+    mem_guard_tainted = MemoryGuard(ctx=ctx_tainted)
+    tainted_write_res = mem_guard_tainted.write(mock_store, "admin_role_override", "true")
+    assert not tainted_write_res.allowed
+    assert tainted_write_res.blocked_reason == "TAINTED_WRITE_BLOCKED"
+    print(f"[*] Memory Guard Poisoned Write Attempt: BLOCKED (Reason: {tainted_write_res.blocked_reason})")
+    print("  -> PASSED: Schema pin registered, verified, and MemoryGuard taint gating active.")
 
     # -----------------------------------------------------------------------
     # PHASE 5: ActionGraph Ingestion & Motif Anomaly Detection

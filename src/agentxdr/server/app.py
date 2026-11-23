@@ -124,7 +124,7 @@ def create_agentxdr_app(
         with open(policy_path, "r", encoding="utf-8") as f:
             policy = load_policy_yaml(f.read())
     else:
-        # Default minimal permissive policy
+        # Default minimal permissive policy with MCP tools including memory
         default_yaml = """
 version: "1.0.0"
 agent_id: "agentxdr-fleet"
@@ -134,10 +134,20 @@ goal_anchor:
 tools:
   - name: "safe_search"
     tier: "automatic"
+  - name: "read_memory"
+    tier: "automatic"
+  - name: "write_memory"
+    tier: "automatic"
   - name: "execute_sql"
     tier: "privileged_hitl"
   - name: "system_shell"
     tier: "blocked"
+taint_rules:
+  - id: "TR-MEM-01"
+    match_taints: ["SUSPECTED_INJECTION"]
+    blocked_tools: ["write_memory"]
+    action: "BLOCK"
+    owasp_id: "ASI08"
 budgets:
   max_turns: 50
   max_tool_calls: 100
@@ -193,6 +203,22 @@ budgets:
 
     dlp_masker = DlpMasker()
     mcp_registry = McpSchemaRegistry()
+    # Pre-register schemas for standard MCP tools including memory
+    mcp_registry.register("safe_search", mcp_registry.compute_tool_hash({
+        "name": "safe_search",
+        "description": "Safe read-only search tool",
+        "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]},
+    }))
+    mcp_registry.register("read_memory", mcp_registry.compute_tool_hash({
+        "name": "read_memory",
+        "description": "Read stateful memory key from persistent agent memory store.",
+        "inputSchema": {"type": "object", "properties": {"key": {"type": "string"}}, "required": ["key"]},
+    }))
+    mcp_registry.register("write_memory", mcp_registry.compute_tool_hash({
+        "name": "write_memory",
+        "description": "Persist key-value pair to stateful agent memory store with WAL logging.",
+        "inputSchema": {"type": "object", "properties": {"key": {"type": "string"}, "value": {"type": "string"}}, "required": ["key", "value"]},
+    }))
     mcp_scanner = McpInjectionScanner()
     mcp_filter = McpToolFilter(policy=policy, registry=mcp_registry, scanner=mcp_scanner)
     mcp_enforcer = McpCallEnforcer(
