@@ -247,3 +247,30 @@
 ### Test Results
 - **690 passed / 0 failed / 17 skipped** across all repository tests (61/61 M7 unit tests passed)
 
+---
+
+## Milestone 8 — M8: Local CPU Semantic Drift Calculator (Phase 3)
+
+**Completed:** 2026-11-23T10:45:00Z  
+**Commit:** `feat(drift): implement local CPU semantic drift calculator (M8)` → pushed to `origin/main`
+
+### Deliverables
+
+| Module | Description |
+|--------|-------------|
+| `src/agentxdr/drift/models.py` | Semantic drift data models: `DriftClassification` (NORMAL, ELEVATED, HIGH_RISK, CRITICAL), `TrajectoryPoint` (normalized cosine embeddings and drift delta), and `SemanticDriftResult` (composite risk score and sliding-window statistics) |
+| `src/agentxdr/drift/embeddings.py` | Embedding engines: abstract `BaseEmbeddingEngine`, zero-dependency `DeterministicEmbeddingEngine` (fast CPU n-gram hash projection to unit vectors), and `OnnxEmbeddingEngine` (live network download and execution of `bge-small-en-v1.5` ONNX model with local caching) |
+| `src/agentxdr/drift/calculator.py` | `SemanticDriftCalculator` with cosine similarity against `goal_anchor`, 3-step sliding window trajectory drift tracking, thread-safe trace history, and composite risk formula $R_t = \min(1.0, 0.45 S_{\text{policy}} + 0.25 S_{\text{graph}} + 0.15 S_{\text{velocity}} + 0.15 S_{\text{semantic}})$ |
+| `src/agentxdr/drift/__init__.py` | Package re-exports for drift models, embedding engines, and semantic drift calculator |
+| `src/agentxdr/__init__.py` | Top-level package re-exports for all 7 Milestone 8 drift symbols (`BaseEmbeddingEngine`, `DeterministicEmbeddingEngine`, `OnnxEmbeddingEngine`, `DriftClassification`, `TrajectoryPoint`, `SemanticDriftResult`, `SemanticDriftCalculator`) |
+| `tests/unit/test_semantic_drift.py` | 38 comprehensive unit tests covering models, deterministic hash embeddings, live ONNX embeddings download and inference, trajectory history, sliding window, and composite risk calculation |
+
+### Test Results
+- **728 passed / 0 failed / 17 skipped** across all repository tests (38/38 M8 unit tests passed, 728 regression tests, 0 failures)
+
+### Verification Wave Sign-Offs
+- **Reviewers:** `reviewer_1`, `reviewer_2` (APPROVED)
+- **Challengers:** `challenger_1`, `challenger_2` (APPROVED)
+- **Forensic Auditor:** `auditor_1` (CLEAN)
+
+

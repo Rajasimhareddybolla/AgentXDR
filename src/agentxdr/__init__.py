@@ -4,6 +4,15 @@ from agentxdr.breakers import (
     CircuitBreaker,
     CircuitBreakerVerdict,
 )
+from agentxdr.drift import (
+    BaseEmbeddingEngine,
+    DeterministicEmbeddingEngine,
+    DriftClassification,
+    OnnxEmbeddingEngine,
+    SemanticDriftCalculator,
+    SemanticDriftResult,
+    TrajectoryPoint,
+)
 from agentxdr.graph import (
     ActionGraph,
     GraphEdge,
@@ -157,4 +166,12 @@ __all__ = [
     "ActiveExecutionOverlay",
     "AgentTopologyModel",
     "AgentTopologyBuilder",
+    # Semantic Drift (M8)
+    "BaseEmbeddingEngine",
+    "DeterministicEmbeddingEngine",
+    "OnnxEmbeddingEngine",
+    "DriftClassification",
+    "TrajectoryPoint",
+    "SemanticDriftResult",
+    "SemanticDriftCalculator",
 ]
