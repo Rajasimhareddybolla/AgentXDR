@@ -327,3 +327,28 @@
 - **Reviewers:** `reviewer_3`, `reviewer_4` (APPROVED)
 - **Challengers:** `challenger_3`, `challenger_4` (APPROVED)
 - **Forensic Auditor:** `auditor_2` (CLEAN)
+
+
+---
+
+## Final Milestone — Phase 3 E2E Multi-Tier Integration & Unified Application
+
+**Completed:** 2026-11-23T17:45:00Z  
+**Commit:** `feat(app): implement unified runtime control plane, CLI suite, and multi-tier E2E validation`
+
+### Deliverables
+
+| Module | Description |
+|--------|-------------|
+| `src/agentxdr/server/app.py` | `create_agentxdr_app`: Unified FastAPI runtime server integrating LLM Gateway (`/v1`), MCP Security Proxy (`/mcp`), Warm-Path Analytics (`/api/v1/analytics/kql`, `/api/v1/analytics/events`), ActionGraph & Topology (`/api/v1/topology/mermaid`, `/api/v1/topology/react-flow`), Semantic Drift (`/api/v1/drift/evaluate`), Anti-ASI09 Persuasion & HITL Review Gate (`/api/v1/hitl/tickets`), and Active Response Kill Switches (`/api/v1/response/kill-switch`) |
+| `src/agentxdr/cli.py` & `__main__.py` | Unified CLI `agentxdr` supporting `serve`, `kql`, `policy validate`, `topology`, and `demo` commands |
+| `scripts/run_demo.py` | Self-contained executable demonstration validating all 3 phases in a live security run |
+| `PROJECT_STATUS.md` | Comprehensive operational status, quick start commands, API route map, and verification summary |
+| `tests/e2e/test_tier1_phase3_features.py` | 55 comprehensive opaque-box feature coverage tests spanning Features 1 through 11 |
+| `tests/e2e/test_tier2_phase3_boundaries.py` | 30 boundary value analysis, large payload, ReDoS, and race-condition stress tests |
+| `tests/e2e/test_tier3_phase3_combinations.py` | 30 cross-subsystem pairwise integration and coordinated threat scenario tests |
+| `tests/unit/test_server_and_cli.py` | 14 unit tests covering unified FastAPI routes, CLI subcommands, and policy validation |
+
+### Test Results
+- **1,088 passed / 0 failed / 17 skipped** across all repository tests (100% green pass rate, 0 regressions)
+

@@ -70,6 +70,7 @@ from agentxdr.proxy import (
     SessionManager,
     build_refusal,
 )
+from agentxdr.server import create_agentxdr_app
 from agentxdr.sdk import (
     AgentBus,
     AgentXDRConfigError,
@@ -242,4 +243,6 @@ __all__ = [
     "parse",
     "tokenize",
     "ParseError",
+    # Unified Server
+    "create_agentxdr_app",
 ]

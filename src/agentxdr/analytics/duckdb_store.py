@@ -43,7 +43,10 @@ _DDL_EVENTS = """
 CREATE TABLE IF NOT EXISTS events (
     event_id        VARCHAR NOT NULL,
     trace_id        VARCHAR,
+    span_id         VARCHAR,
+    parent_span_id  VARCHAR,
     agent_id        VARCHAR,
+    policy_version  VARCHAR,
     event_type      VARCHAR,
     tool_name       VARCHAR,
     verdict         VARCHAR,
@@ -249,16 +252,19 @@ class DuckDbAnalyticsStore:
             self._conn.execute(
                 """
                 INSERT INTO events (
-                    event_id, trace_id, agent_id, event_type,
+                    event_id, trace_id, span_id, parent_span_id, agent_id, policy_version, event_type,
                     tool_name, verdict, owasp_id, rule_id,
                     risk_score, taint_labels, timestamp_utc, metadata_json,
                     payload_redacted, decision, drift_snapshot, principal
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     str(getattr(event, "event_id", "")),
                     str(getattr(event, "trace_id", "")),
+                    str(getattr(event, "span_id", "") or ""),
+                    str(getattr(event, "parent_span_id", "") or ""),
                     str(getattr(event, "agent_id", "")),
+                    str(getattr(event, "policy_version", "") or ""),
                     str(event_type_val),
                     str(tool_name),
                     verdict_str,
@@ -533,6 +539,11 @@ class DuckDbAnalyticsStore:
         compiler = KqlCompiler()
         compiled = compiler.compile(pipeline)
         rows_raw = self.execute_query(compiled.sql, compiled.params)
+        for row in rows_raw:
+            if "count_" in row and "count()" not in row:
+                row["count()"] = row["count_"]
+            elif "count()" in row and "count_" not in row:
+                row["count_"] = row["count()"]
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
         columns = list(rows_raw[0].keys()) if rows_raw else []

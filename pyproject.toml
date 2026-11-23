@@ -25,6 +25,9 @@ dev = [
     "pytest-asyncio>=0.23.0",
 ]
 
+[project.scripts]
+agentxdr = "agentxdr.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

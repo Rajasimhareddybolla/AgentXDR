@@ -1,0 +1,24 @@
+version: "1.0.0"
+agent_id: "sec-ops-analyst"
+goal_anchor:
+  canonical_task: "Analyze network telemetry and investigate reported security incidents."
+  allowed_domains: ["internal.corp", "security.corp"]
+tools:
+  - name: "search_logs"
+    tier: "automatic"
+  - name: "query_database"
+    tier: "privileged_hitl"
+  - name: "system_shell"
+    tier: "blocked"
+taint_rules:
+  - id: "TR-01"
+    match_taints: ["UNTRUSTED_EXTERNAL"]
+    blocked_tools: ["system_shell", "query_database"]
+    action: "BLOCK"
+    owasp_id: "ASI01"
+budgets:
+  max_turns: 15
+  max_tool_calls: 30
+  max_identical_calls: 3
+  max_session_duration_sec: 180.0
+  max_session_cost_usd: 10.0
