@@ -182,12 +182,24 @@ class LlmGateway:
         self, body: Dict[str, Any], headers: Dict[str, str]
     ) -> Dict[str, Any]:
         """Forward request payload to upstream LLM API and return parsed response JSON."""
+        base = self.config.upstream_url.rstrip("/")
+        if base.endswith("/chat/completions"):
+            endpoint_url = base
+        elif base.endswith("/v1"):
+            endpoint_url = base + "/chat/completions"
+        else:
+            endpoint_url = base + "/v1/chat/completions"
+
+        req_headers = dict(headers or {})
+        if self.config.api_key and "Authorization" not in req_headers:
+            req_headers["Authorization"] = f"Bearer {self.config.api_key}"
+
         async with httpx.AsyncClient() as client:
             resp = await client.post(
-                self.config.upstream_url + "/v1/chat/completions",
+                endpoint_url,
                 json=body,
-                headers=headers,
-                timeout=30.0,
+                headers=req_headers,
+                timeout=60.0,
             )
             resp.raise_for_status()
             return resp.json()

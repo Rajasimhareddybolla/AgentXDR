@@ -20,6 +20,7 @@ class GatewayConfig(BaseModel):
     upstream_url: str
     agent_id: str
     policy: PolicySchema
+    api_key: Optional[str] = None
     kill_switch: Optional[KillSwitchState] = None
     max_response_tokens: int = 4096
 

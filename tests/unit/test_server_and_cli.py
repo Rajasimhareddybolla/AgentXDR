@@ -107,6 +107,25 @@ class TestUnifiedServerRoutes:
         assert resp.status_code == 200
         assert resp.json()["status"] == "reset"
 
+    def test_dashboard_endpoint(self, client: TestClient):
+        resp = client.get("/dashboard")
+        assert resp.status_code == 200
+        assert "text/html" in resp.headers["content-type"]
+        assert "AgentXDR | Enterprise Runtime Security Control Plane" in resp.text
+        assert "Live Agent Chat (Meta AI)" in resp.text
+
+    def test_root_redirect_to_dashboard(self, client: TestClient):
+        resp = client.get("/", follow_redirects=False)
+        assert resp.status_code == 307 or resp.status_code == 200
+
+    def test_demo_run_simulation(self, client: TestClient):
+        resp = client.post("/api/v1/demo/run")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "success"
+        assert data["events_generated"] == 4
+        assert "hitl_ticket_id" in data
+
 
 class TestCliInterface:
     def test_parser_generation(self):
