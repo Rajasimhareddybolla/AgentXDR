@@ -9,6 +9,10 @@ from agentxdr.guardrails.dlp import (
     DlpMasker,
     DlpResult,
 )
+from agentxdr.guardrails.sandbox import (
+    SandboxExecResult,
+    SandboxExecutor,
+)
 
 __all__ = [
     "DlpMasker",
@@ -16,4 +20,6 @@ __all__ = [
     "AstSanitizer",
     "AstSanitizerResult",
     "AstViolation",
+    "SandboxExecutor",
+    "SandboxExecResult",
 ]

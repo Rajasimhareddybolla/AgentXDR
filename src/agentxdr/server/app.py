@@ -89,6 +89,54 @@ class KillSwitchResetRequest(BaseModel):
     target_id: str
 
 
+class PolicyDiffApiRequest(BaseModel):
+    base_yaml: str
+    head_yaml: str
+    allow_budget_increase: bool = False
+
+
+class McpDiscoverApiRequest(BaseModel):
+    config_json: Dict[str, Any] = Field(default_factory=dict)
+    source_name: str = "inline"
+
+
+class RedTeamApiRequest(BaseModel):
+    mode: str = "offline"
+    min_score: float = 0.95
+
+
+class SandboxExecApiRequest(BaseModel):
+    code: str
+    provider: str = "ast_only"
+    trace_id: str = "sandbox-session"
+
+
+class MemoryWriteApiRequest(BaseModel):
+    key: str
+    value: Any
+    tainted: bool = False
+
+
+class MemoryRollbackApiRequest(BaseModel):
+    snapshot_id: str
+
+
+class _ServerMemoryKvStore:
+    """Thread-safe key-value backing store for server MemoryGuard demonstrations."""
+
+    def __init__(self) -> None:
+        self.data: Dict[str, Any] = {}
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.data.get(key, default)
+
+    def set(self, key: str, value: Any) -> None:
+        self.data[key] = value
+
+    def delete(self, key: str) -> None:
+        self.data.pop(key, None)
+
+
 # ===========================================================================
 # Server Factory
 # ===========================================================================
@@ -172,6 +220,23 @@ budgets:
     persuasion_clf = PersuasionClassifier()
     hitl_gate = HitlReviewGate()
 
+    # MemoryGuard & Sandbox Executor state
+    from agentxdr.guardrails.sandbox import SandboxExecutor
+    from agentxdr.models.policy import CodeSandboxConfig
+    from agentxdr.sdk.context import AgentXDRContext
+    from agentxdr.sdk.memory import MemoryGuard
+
+    memory_store = _ServerMemoryKvStore()
+    memory_ctx = AgentXDRContext(
+        user_id="system-operator",
+        user_roles=["admin"],
+        agent_id=policy.agent_id,
+        trace_id="server-memory-wal",
+    )
+    memory_guard = MemoryGuard(ctx=memory_ctx)
+    sandbox_cfg = policy.code_sandbox or CodeSandboxConfig(provider="ast_only")
+    sandbox_executor = SandboxExecutor(config=sandbox_cfg)
+
     # 3. Mount Hot-Path Gateways
     import os
     from pathlib import Path
@@ -247,6 +312,9 @@ budgets:
     app.state.hitl_gate = hitl_gate
     app.state.kill_switch = kill_switch
     app.state.llm_gateway = llm_gateway
+    app.state.memory_guard = memory_guard
+    app.state.memory_store = memory_store
+    app.state.sandbox_executor = sandbox_executor
 
     # -----------------------------------------------------------------------
     # System Info & Health & Dashboard
@@ -745,5 +813,125 @@ budgets:
     def reset_kill_switch(req: KillSwitchResetRequest):
         deactivated = kill_switch.deactivate(scope=req.scope, target_id=req.target_id)
         return {"status": "reset", "deactivated": deactivated}
+
+    # -----------------------------------------------------------------------
+    # SCOPE.MD Security Gates: Policy Diff, Shadow MCP, Red-Team, Sandbox & Memory Rollback
+    # -----------------------------------------------------------------------
+
+    @app.post("/api/v1/ci/policy-diff", tags=["Pre-Deployment CI/CD"])
+    def ci_policy_diff(req: PolicyDiffApiRequest):
+        from agentxdr.ci.policy_diff import PolicyDiffEngine
+
+        try:
+            base_pol = load_policy_yaml(req.base_yaml)
+            head_pol = load_policy_yaml(req.head_yaml)
+            report = PolicyDiffEngine().compare(
+                base=base_pol,
+                head=head_pol,
+                allow_budget_increase=req.allow_budget_increase,
+            )
+            return report.model_dump()
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    @app.post("/api/v1/mcp/discover", tags=["MCP Discovery"])
+    def discover_shadow_mcp(req: McpDiscoverApiRequest):
+        from agentxdr.mcp.shadow_scanner import ShadowMcpScanner
+
+        report = ShadowMcpScanner().scan_config_dict(
+            config_data=req.config_json,
+            policy=policy,
+            registry=mcp_registry,
+            source_name=req.source_name,
+        )
+        return report.model_dump()
+
+    @app.post("/api/v1/redteam/run", tags=["Pre-Deployment Red-Team"])
+    def run_redteam_gate(req: RedTeamApiRequest):
+        from agentxdr.redteam.runner import AgentXDRRedTeamRunner, RedTeamMode
+
+        mode = RedTeamMode(req.mode)
+        report = AgentXDRRedTeamRunner().run(
+            policy=policy,
+            mode=mode,
+            min_score=req.min_score,
+            upstream_url=upstream_llm_url,
+            upstream_api_key=resolved_api_key if mode == RedTeamMode.LIVE else None,
+        )
+        return report.model_dump()
+
+    @app.post("/api/v1/sandbox/execute", tags=["Sandbox Execution"])
+    def execute_sandbox_code(req: SandboxExecApiRequest):
+        from agentxdr.guardrails.sandbox import SandboxExecutor
+        from agentxdr.models.events import Decision, DriftSnapshot, Principal, ProvenanceTier
+        from agentxdr.models.policy import CodeSandboxConfig
+
+        cfg = CodeSandboxConfig(provider=req.provider)
+        executor = SandboxExecutor(config=cfg)
+        res = executor.execute(req.code)
+
+        ev = AgentEvent(
+            trace_id=req.trace_id,
+            span_id=str(uuid.uuid4()),
+            agent_id=policy.agent_id,
+            policy_version=policy.version,
+            event_type=EventType.SANDBOX_EXEC,
+            principal=Principal(user_id="sandbox-caller", roles=["operator"]),
+            provenance_tier=ProvenanceTier.RESTRICTED_INTERNAL,
+            payload_redacted=res.payload.model_dump(mode="json"),
+            decision=Decision(
+                verdict=res.verdict,
+                rule_id="SANDBOX_AST_BLOCK" if res.verdict == Verdict.BLOCK else "SANDBOX_ALLOW",
+                owasp_ids=["ASI05"] if res.verdict == Verdict.BLOCK else [],
+                latency_ms=res.payload.execution_time_sec * 1000.0,
+            ),
+            drift_snapshot=DriftSnapshot(
+                composite_score=0.9 if res.verdict == Verdict.BLOCK else 0.05,
+                s_policy=0.9 if res.verdict == Verdict.BLOCK else 0.05,
+                s_graph=0.0,
+                s_velocity=0.0,
+                s_semantic=0.0,
+            ),
+        )
+        analytics_store.ingest_event(ev)
+        action_graph.ingest_event(ev)
+        return res.model_dump()
+
+    @app.get("/api/v1/response/memory/snapshots", tags=["Active Response"])
+    def list_memory_snapshots():
+        return {
+            "snapshots": memory_guard.get_snapshots(),
+            "store_keys": list(memory_store.data.keys()),
+            "store_data": dict(memory_store.data),
+        }
+
+    @app.post("/api/v1/response/memory/write", tags=["Active Response"])
+    def write_guarded_memory(req: MemoryWriteApiRequest):
+        if req.tainted:
+            memory_guard.ctx.add_taint("SUSPECTED_INJECTION")
+        else:
+            # Reset clean state on untainted test call
+            memory_guard.ctx.taint_labels.discard("SUSPECTED_INJECTION")
+
+        res = memory_guard.write(memory_store, req.key, req.value)
+        return {
+            "key": res.key,
+            "allowed": res.allowed,
+            "blocked_reason": res.blocked_reason,
+            "snapshot_id": res.snapshot_id,
+            "value_hash": res.value_hash,
+        }
+
+    @app.post("/api/v1/response/memory/rollback", tags=["Active Response"])
+    def rollback_memory_snapshot(req: MemoryRollbackApiRequest):
+        res = memory_guard.rollback(memory_store, req.snapshot_id)
+        if not res.success:
+            raise HTTPException(status_code=404, detail=f"Snapshot not found: {req.snapshot_id}")
+        return {
+            "status": "rolled_back",
+            "target_snapshot_id": res.target_snapshot_id,
+            "reverted_count": res.reverted_count,
+            "restored_keys": res.restored_keys,
+        }
 
     return app

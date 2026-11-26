@@ -30,14 +30,37 @@ from agentxdr.guardrails import (
     AstViolation,
     DlpMasker,
     DlpResult,
+    SandboxExecResult,
+    SandboxExecutor,
 )
 from agentxdr.mcp import (
+    GuardedStdioMcpClient,
     McpCallEnforcer,
     McpInjectionScanner,
     McpProxy,
     McpSchemaRegistry,
+    McpServerTarget,
     McpToolFilter,
+    ShadowDiscoveryReport,
+    ShadowFinding,
+    ShadowMcpScanner,
     create_fastapi_mcp_app,
+)
+from agentxdr.ci import (
+    DependencyAuditReport,
+    DependencyAuditor,
+    DependencyFinding,
+    PolicyDiffEngine,
+    PolicyDiffFinding,
+    PolicyDiffReport,
+    RegressionSeverity,
+)
+from agentxdr.redteam import (
+    AgentXDRRedTeamRunner,
+    RedTeamCase,
+    RedTeamMode,
+    RedTeamReport,
+    RedTeamResult,
 )
 from agentxdr.models import (
     AgentEvent,
@@ -77,6 +100,7 @@ from agentxdr.sdk import (
     AgentXDRContext,
     InterAgentEnvelope,
     MemoryGuard,
+    MemoryRollbackResult,
     MemoryWriteResult,
     RagGuard,
     RagRetrievalResult,
@@ -245,4 +269,25 @@ __all__ = [
     "ParseError",
     # Unified Server
     "create_agentxdr_app",
+    # SCOPE.MD CI, Red-Team, Stdio MCP, Sandbox & Memory Rollback
+    "PolicyDiffEngine",
+    "PolicyDiffFinding",
+    "PolicyDiffReport",
+    "RegressionSeverity",
+    "DependencyAuditor",
+    "DependencyAuditReport",
+    "DependencyFinding",
+    "GuardedStdioMcpClient",
+    "McpServerTarget",
+    "ShadowMcpScanner",
+    "ShadowFinding",
+    "ShadowDiscoveryReport",
+    "AgentXDRRedTeamRunner",
+    "RedTeamCase",
+    "RedTeamMode",
+    "RedTeamReport",
+    "RedTeamResult",
+    "SandboxExecutor",
+    "SandboxExecResult",
+    "MemoryRollbackResult",
 ]

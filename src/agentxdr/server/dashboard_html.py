@@ -449,6 +449,42 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           </div>
         </div>
       </div>
+
+      <!-- Memory WAL Rollback & Pre-Deployment Red-Team Gate -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Memory WAL & 1-Click Rollback -->
+        <div class="bg-dark-900 border border-slate-800 rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-sm text-white flex items-center space-x-2">
+              <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i>
+              <span>Memory WAL & 1-Click Rollback</span>
+            </h2>
+            <div class="space-x-2">
+              <button onclick="testMemoryWrite(false)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px]">Write Clean Key</button>
+              <button onclick="testMemoryWrite(true)" class="px-2 py-1 rounded bg-red-900/50 hover:bg-red-800/60 text-red-200 text-[11px]">Simulate Poisoned Write</button>
+            </div>
+          </div>
+          <div id="memory-wal-list" class="space-y-2 text-xs max-h-56 overflow-y-auto">
+            <div class="text-slate-500">No WAL memory snapshots yet.</div>
+          </div>
+        </div>
+
+        <!-- Pre-Deployment PyRIT Red-Team Gate -->
+        <div class="bg-dark-900 border border-slate-800 rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-sm text-white flex items-center space-x-2">
+              <i class="fa-solid fa-flask-vial text-amber-400"></i>
+              <span>Pre-Deployment PyRIT Red-Team Gate</span>
+            </h2>
+            <button onclick="runDashboardRedTeam()" id="btn-run-redteam" class="px-3 py-1 rounded bg-amber-500 hover:bg-amber-400 text-dark-950 font-semibold text-xs">
+              <i class="fa-solid fa-play mr-1"></i> Run Gate (Offline)
+            </button>
+          </div>
+          <div id="redteam-results-panel" class="space-y-2 text-xs max-h-56 overflow-y-auto">
+            <div class="text-slate-500">Click "Run Gate" to execute PyRIT + OWASP ASI01-ASI09 verification suite.</div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </main>
@@ -478,7 +514,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       if (tabId === 'tab-topology') loadTopology();
       if (tabId === 'tab-hitl') loadHitlTickets();
       if (tabId === 'tab-drift') initOrUpdateDriftChart();
-      if (tabId === 'tab-response') loadKillSwitchStatus();
+      if (tabId === 'tab-response') { loadKillSwitchStatus(); loadMemorySnapshots(); }
     }
 
     // --- Live Chat Form ---
@@ -939,6 +975,90 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       refreshHeaderStats();
       loadHitlTickets();
       loadKillSwitchStatus();
+      loadMemorySnapshots();
+    }
+
+    // --- Memory WAL & Rollback ---
+    async function loadMemorySnapshots() {
+      try {
+        const res = await fetch('/api/v1/response/memory/snapshots');
+        const data = await res.json();
+        const container = document.getElementById('memory-wal-list');
+        if (!container) return;
+        const snaps = data.snapshots || [];
+        if (snaps.length === 0) {
+          container.innerHTML = '<div class="text-slate-500">No WAL memory snapshots yet.</div>';
+          return;
+        }
+        container.innerHTML = snaps.slice().reverse().map(s => `
+          <div class="p-2.5 rounded bg-dark-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="font-mono text-cyan-300 font-semibold">${escapeHtml(s.key)}</span>
+              <span class="ml-2 px-1.5 py-0.5 rounded text-[10px] ${s.status === 'ROLLED_BACK' ? 'bg-slate-800 text-slate-400' : 'bg-emerald-500/20 text-emerald-300'}">${s.status || 'COMMITTED'}</span>
+              <div class="text-[10px] text-slate-500 font-mono mt-0.5">ID: ${s.snapshot_id.substring(0, 8)}... | Hash: ${s.value_hash.substring(0, 12)}...</div>
+            </div>
+            ${s.status !== 'ROLLED_BACK' ? `<button onclick="rollbackMemorySnapshot('${s.snapshot_id}')" class="px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-[11px]">Rollback</button>` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function testMemoryWrite(tainted) {
+      const res = await fetch('/api/v1/response/memory/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: tainted ? 'admin_override' : 'analyst_note_' + Date.now().toString().slice(-4),
+          value: tainted ? 'bypass_security=true' : 'verified_normal_session',
+          tainted: tainted
+        })
+      });
+      const data = await res.json();
+      if (!data.allowed) {
+        alert('MemoryGuard BLOCKED poisoned write: ' + data.blocked_reason);
+      }
+      loadMemorySnapshots();
+    }
+
+    async function rollbackMemorySnapshot(snapshotId) {
+      await fetch('/api/v1/response/memory/rollback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ snapshot_id: snapshotId })
+      });
+      loadMemorySnapshots();
+    }
+
+    // --- Pre-Deployment Red-Team Gate ---
+    async function runDashboardRedTeam() {
+      const panel = document.getElementById('redteam-results-panel');
+      panel.innerHTML = '<div class="text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Running PyRIT + OWASP ASI01-ASI09 probes...</div>';
+      try {
+        const res = await fetch('/api/v1/redteam/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'offline', min_score: 0.95 })
+        });
+        const data = await res.json();
+        const badge = data.passed_threshold
+          ? `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PASSED (${(data.resilience_score * 100).toFixed(0)}%)</span>`
+          : `<span class="px-2 py-0.5 rounded bg-red-500/20 text-red-300 font-bold">FAILED (${(data.resilience_score * 100).toFixed(0)}%)</span>`;
+        let rows = (data.results || []).map(r => `
+          <div class="p-2 rounded bg-dark-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="font-mono text-[10px] text-cyan-400 mr-1">${r.owasp_id}</span>
+              <span class="text-slate-200">${escapeHtml(r.case_id)}</span>
+              <p class="text-[10px] text-slate-400">${escapeHtml(r.details)}</p>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${r.defended ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}">${r.defended ? 'DEFENDED' : 'BYPASSED'}</span>
+          </div>
+        `).join('');
+        panel.innerHTML = `<div class="mb-2 flex items-center justify-between"><span>Cases: ${data.defended_cases}/${data.total_cases}</span>${badge}</div>${rows}`;
+      } catch (e) {
+        panel.innerHTML = `<div class="text-red-400">Error: ${e.message}</div>`;
+      }
     }
 
     async function triggerDemoScript() {
